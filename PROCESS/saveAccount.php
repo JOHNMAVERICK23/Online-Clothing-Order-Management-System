@@ -18,28 +18,20 @@ $lastName = trim($_POST['last_name'] ?? '');
 $email = trim($_POST['email'] ?? '');
 $password = $_POST['password'] ?? '';
 $role = $_POST['role'] ?? '';
-$status = $_POST['status'] ?? '';
 
 // Validate inputs
-if (empty($firstName) || empty($lastName) || empty($email) || empty($role) || empty($status)) {
+if (empty($firstName) || empty($lastName) || empty($email) || empty($role)) {
     exit(json_encode([
         'success' => false,
         'message' => 'All fields are required'
     ]));
 }
 
-// Validate role and status
+// Validate role
 if (!in_array($role, ['admin', 'staff'])) {
     exit(json_encode([
         'success' => false,
         'message' => 'Invalid role'
-    ]));
-}
-
-if (!in_array($status, ['active', 'inactive'])) {
-    exit(json_encode([
-        'success' => false,
-        'message' => 'Invalid status'
     ]));
 }
 
@@ -64,6 +56,9 @@ if (empty($id)) {
     }
 
     $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+    
+    // New accounts start as inactive (until they login)
+    $status = 'inactive';
     
     $stmt = $conn->prepare("
         INSERT INTO users (first_name, last_name, email, password, role, status)
@@ -123,10 +118,10 @@ else {
 
     $stmt = $conn->prepare("
         UPDATE users 
-        SET first_name = ?, last_name = ?, email = ?, password = ?, role = ?, status = ?
+        SET first_name = ?, last_name = ?, email = ?, password = ?, role = ?
         WHERE id = ?
     ");
-    $stmt->bind_param("ssssssi", $firstName, $lastName, $email, $finalPassword, $role, $status, $id);
+    $stmt->bind_param("sssssi", $firstName, $lastName, $email, $finalPassword, $role, $id);
 
     if ($stmt->execute()) {
         // Log activity

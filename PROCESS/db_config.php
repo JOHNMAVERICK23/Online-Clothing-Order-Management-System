@@ -27,7 +27,9 @@ $createTablesQuery = "
         email VARCHAR(100) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
         role ENUM('admin', 'staff') NOT NULL,
-        status ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
+        status ENUM('active', 'inactive') NOT NULL DEFAULT 'inactive',
+        last_login_at TIMESTAMP NULL,
+        last_logout_at TIMESTAMP NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     );
@@ -37,6 +39,8 @@ $createTablesQuery = "
         user_id INT NOT NULL,
         action VARCHAR(255) NOT NULL,
         details TEXT,
+        ip_address VARCHAR(45),
+        user_agent TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
@@ -57,7 +61,7 @@ if ($checkAdmin->num_rows === 0) {
     $adminPassword = password_hash('admin123', PASSWORD_BCRYPT);
     $conn->query("
         INSERT INTO users (first_name, last_name, email, password, role, status)
-        VALUES ('System', 'Admin', '$adminEmail', '$adminPassword', 'admin', 'active')
+        VALUES ('System', 'Admin', '$adminEmail', '$adminPassword', 'admin', 'inactive')
     ");
 }
 ?>

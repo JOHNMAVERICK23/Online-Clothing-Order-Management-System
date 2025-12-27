@@ -46,7 +46,7 @@ function displayAccounts(accounts) {
     tbody.innerHTML = '';
 
     if (accounts.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 30px;">No accounts found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 30px;">No accounts found</td></tr>';
         return;
     }
 
@@ -55,12 +55,16 @@ function displayAccounts(accounts) {
         const fullName = account.first_name + ' ' + account.last_name;
         const statusBadge = `<span class="badge ${account.status === 'active' ? 'badge-active' : 'badge-inactive'}">${account.status.toUpperCase()}</span>`;
         const roleBadge = `<span class="badge ${account.role === 'admin' ? 'badge-admin' : 'badge-staff'}">${account.role.toUpperCase()}</span>`;
+        const lastLogin = account.last_login_at ? 
+            new Date(account.last_login_at).toLocaleString() : 
+            'Never';
         
         row.innerHTML = `
             <td>${fullName}</td>
             <td>${account.email}</td>
             <td>${roleBadge}</td>
             <td>${statusBadge}</td>
+            <td>${lastLogin}</td>
             <td>${new Date(account.created_at).toLocaleDateString()}</td>
             <td>
                 <div class="table-actions">
@@ -94,7 +98,6 @@ function openEditModal(id) {
     document.getElementById('password').placeholder = 'Leave blank to keep current password';
     document.getElementById('password').value = '';
     document.getElementById('role').value = account.role;
-    document.getElementById('status').value = account.status;
     document.getElementById('accountModal').classList.add('active');
 }
 
@@ -112,9 +115,8 @@ function submitAccount(e) {
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
     const role = document.getElementById('role').value;
-    const status = document.getElementById('status').value;
 
-    if (!firstName || !lastName || !email || !role || !status) {
+    if (!firstName || !lastName || !email || !role) {
         showAlert('Please fill in all required fields', 'danger');
         return;
     }
@@ -131,7 +133,6 @@ function submitAccount(e) {
     formData.append('email', email);
     formData.append('password', password);
     formData.append('role', role);
-    formData.append('status', status);
 
     fetch('../PROCESS/saveAccount.php', {
         method: 'POST',

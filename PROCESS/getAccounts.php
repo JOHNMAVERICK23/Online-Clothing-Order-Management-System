@@ -11,7 +11,7 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
     ]));
 }
 
-$query = "SELECT id, first_name, last_name, email, role, status, created_at FROM users ORDER BY created_at DESC";
+$query = "SELECT id, first_name, last_name, email, role, status, last_login_at, created_at FROM users ORDER BY created_at DESC";
 $result = $conn->query($query);
 
 $accounts = [];
