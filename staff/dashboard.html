@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Dashboard - Clothing Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../CSS/style.css">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-logo">CMS Staff</div>
+        <ul class="sidebar-menu">
+            <li><a href="dashboard.html" class="active">Dashboard</a></li>
+            <li><a href="orders.html">Orders</a></li>
+            <li><a href="profile.html">My Profile</a></li>
+            <li><a href="../PROCESS/logout.php">Logout</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="topbar">
+            <div class="topbar-title">Staff Dashboard</div>
+            <div class="user-info">
+                <span class="user-role">STAFF</span>
+                <a href="../PROCESS/logout.php" class="btn-logout">Logout</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Welcome to CMS</h2>
+            </div>
+            <p style="font-size: 16px; color: #666; line-height: 1.6;">
+                This is your staff dashboard. As a staff member, you have limited access to the system. 
+                You can view orders and manage your profile, but account management is restricted to administrators only.
+            </p>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Available Actions</h2>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 20px;">
+                <div style="background: #f9f9f9; padding: 20px; border-radius: 4px; text-align: center;">
+                    <h4 style="color: #1a1a1a; margin-bottom: 10px;">📋 Orders</h4>
+                    <p style="color: #666; margin-bottom: 15px;">View and manage customer orders</p>
+                    <a href="orders.html" style="color: #1a1a1a; text-decoration: none; font-weight: 600;">Go to Orders →</a>
+                </div>
+                <div style="background: #f9f9f9; padding: 20px; border-radius: 4px; text-align: center;">
+                    <h4 style="color: #1a1a1a; margin-bottom: 10px;">👤 Profile</h4>
+                    <p style="color: #666; margin-bottom: 15px;">Update your profile information</p>
+                    <a href="profile.html" style="color: #1a1a1a; text-decoration: none; font-weight: 600;">Go to Profile →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Permissions</h2>
+            </div>
+            <table class="table" style="margin-top: 0;">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Access Level</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>View Orders</td>
+                        <td><span class="badge badge-active">✓ Allowed</span></td>
+                    </tr>
+                    <tr>
+                        <td>Manage Profile</td>
+                        <td><span class="badge badge-active">✓ Allowed</span></td>
+                    </tr>
+                    <tr>
+                        <td>Manage Accounts</td>
+                        <td><span class="badge badge-inactive">✗ Restricted</span></td>
+                    </tr>
+                    <tr>
+                        <td>View Activity Logs</td>
+                        <td><span class="badge badge-inactive">✗ Restricted</span></td>
+                    </tr>
+                    <tr>
+                        <td>System Settings</td>
+                        <td><span class="badge badge-inactive">✗ Restricted</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

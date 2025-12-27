@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Accounts - Clothing Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../CSS/style.css">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-logo">CMS Admin</div>
+        <ul class="sidebar-menu">
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="accounts.html" class="active">Manage Accounts</a></li>
+            <li><a href="activity.html">Activity Log</a></li>
+            <li><a href="settings.html">Settings</a></li>
+            <li><a href="../PROCESS/logout.php">Logout</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="topbar">
+            <div class="topbar-title">Manage Accounts</div>
+            <div class="user-info">
+                <span class="user-role">ADMIN</span>
+                <a href="../PROCESS/logout.php" class="btn-logout">Logout</a>
+            </div>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">User Accounts</h2>
+                <button class="btn-primary" id="btnAddAccount">+ Add New Account</button>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <input type="text" id="searchInput" class="form-control" placeholder="Search by name or email...">
+            </div>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Date Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="accountsTable">
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 30px;">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div class="modal-overlay" id="accountModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="modalTitle">Add New Account</h3>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+
+            <form id="accountForm">
+                <input type="hidden" id="accountId" value="">
+
+                <div class="mb-3">
+                    <label for="firstName" class="form-label">First Name</label>
+                    <input type="text" class="form-control" id="firstName" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="lastName" class="form-label">Last Name</label>
+                    <input type="text" class="form-control" id="lastName" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" placeholder="Leave blank to keep current password">
+                </div>
+
+                <div class="mb-3">
+                    <label for="role" class="form-label">Role</label>
+                    <select class="form-control" id="role" required>
+                        <option value="">Select Role</option>
+                        <option value="admin">Admin</option>
+                        <option value="staff">Staff</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-control" id="status" required>
+                        <option value="">Select Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../JS/accounts.js"></script>
+</body>
+</html>
