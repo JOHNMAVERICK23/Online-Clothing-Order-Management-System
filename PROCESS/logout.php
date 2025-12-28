@@ -32,6 +32,6 @@ session_start();
 $_SESSION['logout_message'] = 'Logged out successfully';
 
 // Redirect to login
-header('Location: ../index.html');
+header('Location: ../login.html');
 exit;
 ?>

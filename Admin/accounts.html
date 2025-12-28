@@ -5,17 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Accounts - Clothing Management System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="../CSS/style.css">
+    <link rel="stylesheet" href="../CSS/accounts.css">
 </head>
 <body>
     <div class="sidebar">
         <div class="sidebar-logo">CMS Admin</div>
         <ul class="sidebar-menu">
-            <li><a href="dashboard.html">Dashboard</a></li>
-            <li><a href="accounts.html" class="active">Manage Accounts</a></li>
-            <li><a href="activity.html">Activity Log</a></li>
-            <li><a href="settings.html">Settings</a></li>
-            <li><a href="../PROCESS/logout.php">Logout</a></li>
+            <li><a href="dashboard.html"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+            <li><a href="accounts.html" class="active"><i class="bi bi-people"></i> Manage Accounts</a></li>
+            <li><a href="activity.html"><i class="bi bi-clock-history"></i> Activity Log</a></li>
+            <li><a href="settings.html"><i class="bi bi-gear"></i> Settings</a></li>
+            <li><a href="../PROCESS/logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
         </ul>
     </div>
 
@@ -24,11 +26,43 @@
             <div class="topbar-title">Manage Accounts</div>
             <div class="user-info">
                 <span class="user-role">ADMIN</span>
-                <a href="../PROCESS/logout.php" class="btn-logout">Logout</a>
+                <a href="../PROCESS/logout.php" class="btn-logout">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
             </div>
         </div>
 
         <div id="alertContainer"></div>
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="stat-box primary">
+                    <div class="stat-icon"><i class="bi bi-people"></i></div>
+                    <div class="stat-number" id="totalUsers">0</div>
+                    <div class="stat-label">Total Users</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stat-box success">
+                    <div class="stat-icon"><i class="bi bi-shield-check"></i></div>
+                    <div class="stat-number" id="adminCount">0</div>
+                    <div class="stat-label">Admins</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stat-box warning">
+                    <div class="stat-icon"><i class="bi bi-person-badge"></i></div>
+                    <div class="stat-number" id="staffCount">0</div>
+                    <div class="stat-label">Staff</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stat-box danger">
+                    <div class="stat-icon"><i class="bi bi-person-check"></i></div>
+                    <div class="stat-number" id="activeCount">0</div>
+                    <div class="stat-label">Active Now</div>
+                </div>
+            </div>
+        </div>
 
         <div class="card">
             <div class="card-header">
@@ -111,5 +145,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../JS/accounts.js"></script>
+    <script src="../JS/accounts-stats.js"></script>
 </body>
 </html>

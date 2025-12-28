@@ -200,3 +200,4 @@ function showAlert(message, type) {
         alertDiv.remove();
     }, 5000);
 }
+

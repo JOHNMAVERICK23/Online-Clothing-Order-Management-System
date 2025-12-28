@@ -82,7 +82,7 @@ function checkAuth() {
         
         if (!hasSession) {
             // Redirect to login
-            window.location.href = '../index.html';
+            window.location.href = '../login.html';
         }
     }
 }

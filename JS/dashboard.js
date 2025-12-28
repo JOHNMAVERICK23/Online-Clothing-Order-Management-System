@@ -14,8 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Set greeting based on time
     setGreeting();
     
-    // Load dashboard data
-    loadDashboardData();
+    loadRecentAccounts();
     
     // Initialize system status
     updateSystemStatus();
@@ -65,64 +64,6 @@ function setGreeting() {
     }
 }
 
-function loadDashboardData() {
-    // Show loading state
-    const stats = ['totalUsers', 'adminCount', 'staffCount', 'activeCount'];
-    stats.forEach(stat => {
-        const element = document.getElementById(stat);
-        if (element) {
-            element.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
-        }
-    });
-    
-    fetch('../PROCESS/getDashboardData.php')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                // Update stats with animation
-                animateCounter('totalUsers', data.totalUsers);
-                animateCounter('adminCount', data.adminCount);
-                animateCounter('staffCount', data.staffCount);
-                animateCounter('activeCount', data.activeCount);
-                
-                // Load recent accounts
-                loadRecentAccounts();
-            } else {
-                Toast.error('Failed to load dashboard data: ' + (data.message || 'Unknown error'));
-            }
-        })
-        .catch(error => {
-            Toast.error('Error loading dashboard data');
-            console.error('Error:', error);
-        });
-}
-
-function animateCounter(elementId, targetValue) {
-    const element = document.getElementById(elementId);
-    if (!element) return;
-    
-    const duration = 1000; // 1 second
-    const step = 20; // update every 20ms
-    const totalSteps = duration / step;
-    const increment = targetValue / totalSteps;
-    let current = 0;
-    let stepCount = 0;
-    
-    const timer = setInterval(() => {
-        stepCount++;
-        current += increment;
-        if (stepCount >= totalSteps) {
-            current = targetValue;
-            clearInterval(timer);
-        }
-        element.textContent = Math.round(current);
-    }, step);
-}
 
 function loadRecentAccounts() {
     const tbody = document.getElementById('recentAccounts');
@@ -268,23 +209,14 @@ function updateSystemStatus() {
 }
 
 function refreshDashboard() {
-    Toast.info('Refreshing dashboard...', 1000);
-    
-    // Show loading spinners
-    const stats = ['totalUsers', 'adminCount', 'staffCount', 'activeCount'];
-    stats.forEach(stat => {
-        const element = document.getElementById(stat);
-        if (element) {
-            element.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
-        }
-    });
-    
-    // Reload data
+    Toast.info('Refreshing...', 800);
+
     setTimeout(() => {
-        loadDashboardData();
-        Toast.success('Dashboard refreshed!', 1000);
-    }, 500);
+        loadRecentAccounts();
+        Toast.success('Updated successfully!', 1000);
+    }, 400);
 }
+
 
 // Make functions available globally
 window.refreshDashboard = refreshDashboard;
