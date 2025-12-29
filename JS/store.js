@@ -76,7 +76,7 @@ function setupEventListeners() {
 function loadProducts() {
     showLoading(true);
     
-    fetch('PROCESS/getPublicProducts.php')
+    fetch('../PROCESS/getPublicProducts.php')
         .then(response => {
             if (!response.ok) throw new Error('Network response was not ok');
             return response.json();
@@ -288,19 +288,23 @@ function getStockStatus(quantity) {
 }
 
 function getPlaceholderImage(category) {
-    const placeholders = {
-        'T-Shirts': 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop',
-        'Shirts': 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=400&h=400&fit=crop',
-        'Pants': 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=400&fit=crop',
-        'Jeans': 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=400&fit=crop',
-        'Dresses': 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=400&fit=crop',
-        'Skirts': 'https://images.unsplash.com/photo-1594633313593-ba5ccbacffb1?w=400&h=400&fit=crop',
-        'Jackets': 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400&h=400&fit=crop',
-        'Shoes': 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop',
-        'Accessories': 'https://images.unsplash.com/photo-1556306535-0f09a537f0a3?w=400&h=400&fit=crop'
-    };
+    // Local placeholder without internet
+    const categoryText = category || 'Product';
     
-    return placeholders[category] || 'https://via.placeholder.com/400x400/cccccc/ffffff?text=Product+Image';
+    const localPlaceholder = 'data:image/svg+xml;base64,' + btoa(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="400" height="400">
+            <rect width="400" height="400" fill="#f0f0f0"/>
+            <rect width="380" height="380" x="10" y="10" fill="#ffffff" stroke="#cccccc" stroke-width="2"/>
+            <text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="#666666" font-family="Arial, sans-serif" font-size="16">
+                ${categoryText}
+            </text>
+            <text x="50%" y="60%" text-anchor="middle" fill="#999999" font-family="Arial, sans-serif" font-size="12">
+                No Image Available
+            </text>
+        </svg>
+    `);
+    
+    return localPlaceholder;
 }
 
 function truncateText(text, maxLength) {

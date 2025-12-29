@@ -112,8 +112,7 @@ function getProductImage(product) {
         'Accessories': 'https://images.unsplash.com/photo-1556306535-0f09a537f0a3?w=150&h=150&fit=crop'
     };
     
-    return placeholders[product.category] || 
-           'https://via.placeholder.com/150/cccccc/ffffff?text=' + encodeURIComponent(product.category);
+    return getLocalPlaceholder(product.category);
 }
 
 function loadProducts() {
@@ -229,10 +228,10 @@ function displayProducts(products) {
         html += `
             <tr>
                 <td>
-                    <img src="${imageUrl}" 
-                         alt="${product.product_name}" 
-                         class="product-image"
-                         onerror="this.src='https://via.placeholder.com/150?text=No+Image'">
+                <img src="${imageUrl}" 
+                alt="${product.product_name}" 
+                class="product-image"
+                onerror="this.src='${getLocalPlaceholder(product.category)}'">
                 </td>
                 <td>
                     <strong>${product.product_name}</strong>
@@ -271,6 +270,25 @@ function displayProducts(products) {
     
     tbody.innerHTML = html;
     updateProductCount(products.length);
+}
+
+function getLocalPlaceholder(category) {
+    // Simple gray placeholder na naka-embed sa code
+    // Hindi na kailangan ng internet connection
+    const categoryText = category || 'Product';
+    
+    // Base64 encoded na simple gray image
+    // Ito ay embedded image - hindi na kailangan mag-load ng external website
+    const grayPlaceholder = 'data:image/svg+xml;base64,' + btoa(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="150" height="150">
+            <rect width="150" height="150" fill="#cccccc"/>
+            <text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="#666666" font-family="Arial, sans-serif" font-size="12">
+                ${categoryText}
+            </text>
+        </svg>
+    `);
+    
+    return grayPlaceholder;
 }
 
 function getStockBadge(quantity) {

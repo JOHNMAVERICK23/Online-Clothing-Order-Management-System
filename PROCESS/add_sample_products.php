@@ -95,6 +95,16 @@ $sampleProducts = [
 // Insert sample products
 $inserted = 0;
 foreach ($sampleProducts as $product) {
+    $product_name = $product['product_name'];
+    $description = $product['description'];
+    $category = $product['category'];
+    $price = $product['price'];
+    $quantity = $product['quantity'];
+    $size = $product['size'] ?? '';
+    $color = $product['color'] ?? '';
+    $image_url = $product['image_url'];
+    $status = $product['status'];
+    
     $stmt = $conn->prepare("
         INSERT INTO products (product_name, description, category, price, quantity, size, color, image_url, status, created_by)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
@@ -102,15 +112,15 @@ foreach ($sampleProducts as $product) {
     
     $stmt->bind_param(
         "sssdissss",
-        $product['product_name'],
-        $product['description'],
-        $product['category'],
-        $product['price'],
-        $product['quantity'],
-        $product['size'] ?? '',
-        $product['color'] ?? '',
-        $product['image_url'],
-        $product['status']
+        $product_name,
+        $description,
+        $category,
+        $price,
+        $quantity,
+        $size,      // VARIABLE NA NGAYON
+        $color,     // VARIABLE NA NGAYON
+        $image_url,
+        $status
     );
     
     if ($stmt->execute()) {
@@ -120,7 +130,7 @@ foreach ($sampleProducts as $product) {
 
 echo "<h1>Sample Products Added</h1>";
 echo "<p>Successfully added $inserted sample products.</p>";
-echo "<p><a href='../index.html'>View Store</a></p>";
+echo "<p><a href='../Public/Store.html'>View Store</a></p>";
 
 $conn->close();
 ?>
