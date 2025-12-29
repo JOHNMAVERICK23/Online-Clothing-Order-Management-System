@@ -14,12 +14,20 @@ body {
 .sidebar {
     background-color: #1a1a1a;
     color: white;
-    min-height: 100vh;
+    height: 100vh;
     padding: 20px;
     position: fixed;
     width: 250px;
     left: 0;
     top: 0;
+    display: flex;              /* NEW */
+    flex-direction: column;     /* NEW */
+    overflow-y: auto;
+}
+.sidebar-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 5px;
 }
 
 .sidebar-logo {

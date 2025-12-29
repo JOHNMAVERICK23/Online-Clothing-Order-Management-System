@@ -24,9 +24,9 @@
 }
 
 .stat-box.primary { border-left-color: var(--primary); }
-.stat-box.success { border-left-color: var(--success); }
-.stat-box.danger { border-left-color: var(--danger); }
-.stat-box.warning { border-left-color: var(--warning); }
+.stat-box.success { border-left-color: var(--primary); }
+.stat-box.danger { border-left-color: var(--primary); }
+.stat-box.warning { border-left-color: var(--primary); }
 
 .stat-number {
     font-size: 36px;
