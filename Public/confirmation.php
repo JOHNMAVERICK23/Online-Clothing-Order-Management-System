@@ -147,11 +147,11 @@ while ($item = $itemsResult->fetch_assoc()) {
                         <div style="font-size: 14px; margin-top: 5px;">
                             <?php 
                             if ($paymentMethod === 'cod') {
-                                echo '💵 Cash on Delivery';
+                                echo 'Cash on Delivery';
                             } elseif ($paymentMethod === 'gcash') {
-                                echo '📱 GCash';
+                                echo 'GCash';
                             } elseif ($paymentMethod === 'paymaya') {
-                                echo '💳 PayMaya';
+                                echo 'PayMaya';
                             } else {
                                 echo 'Online Payment';
                             }

@@ -10,130 +10,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="../CSS/store.css">
-    <style>
-        .cart-item {
-            display: grid;
-            grid-template-columns: 100px 1fr 1fr 1fr 1fr 100px;
-            gap: 15px;
-            align-items: center;
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            background: white;
-        }
-
-        .cart-item:hover {
-            background: #f9f9f9;
-        }
-
-        .cart-item-image {
-            width: 100px;
-            height: 100px;
-            border-radius: 8px;
-            object-fit: cover;
-            border: 1px solid #ddd;
-        }
-
-        .cart-item-name {
-            font-weight: 600;
-            color: #1a1a1a;
-        }
-
-        .cart-item-price {
-            font-weight: 600;
-            color: #3498db;
-            font-size: 16px;
-        }
-
-        .quantity-input {
-            width: 80px;
-            padding: 5px 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            text-align: center;
-        }
-
-        .remove-btn {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            padding: 6px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        .remove-btn:hover {
-            background: #c0392b;
-        }
-
-        .empty-cart {
-            text-align: center;
-            padding: 60px 20px;
-        }
-
-        .empty-cart-icon {
-            font-size: 80px;
-            color: #ddd;
-            margin-bottom: 20px;
-        }
-
-        .order-summary {
-            background: white;
-            border-radius: 8px;
-            padding: 25px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            position: sticky;
-            top: 20px;
-        }
-
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #eee;
-        }
-
-        .summary-row:last-child {
-            border-bottom: none;
-        }
-
-        .summary-row.total {
-            border-top: 2px solid #1a1a1a;
-            font-weight: 700;
-            font-size: 18px;
-            color: #1a1a1a;
-            padding-top: 15px;
-            margin-top: 10px;
-        }
-
-        .cart-icon-container {
-            position: relative;
-            display: inline-block;
-            margin-right: 10px;
-        }
-
-        .cart-badge {
-            position: absolute;
-            top: -8px;
-            right: -10px;
-            background: #e74c3c;
-            color: white;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .cart-icon-link {
-            color: white;
-            text-decoration: none;
-            font-size: 20px;
-        }
-    </style>
+    <link rel="stylesheet" href="../CSS/cart.css">
 </head>
 <body style="background: #f8f9fa;">
     <!-- Navigation -->
@@ -209,11 +86,11 @@
                         <span id="totalAmount">₱0.00</span>
                     </div>
 
-                    <button class="btn btn-primary w-100 mt-4" id="checkoutBtn" onclick="proceedToCheckout()">
+                    <button class="btn w-100 mt-4 checkout-btn" id="checkoutBtn" onclick="proceedToCheckout()">
                         <i class="bi bi-credit-card"></i> Proceed to Checkout
                     </button>
 
-                    <a href="store.php" class="btn btn-outline-secondary w-100 mt-2">
+                    <a href="store.php" class="btn btn-outline-secondary w-100 mt-2 shopping-btn">
                         <i class="bi bi-arrow-left"></i> Continue Shopping
                     </a>
 
@@ -350,8 +227,9 @@
         }
 
         function enableCheckout() {
-            document.getElementById('checkoutBtn').disabled = false;
-            document.getElementById('checkoutBtn').textContent = '💳 Proceed to Checkout';
+            const btn = document.getElementById('checkoutBtn');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-bag-check-fill checkout-icon"></i> Proceed to Checkout';
         }
 
         function proceedToCheckout() {

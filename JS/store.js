@@ -531,6 +531,12 @@ function updateCartCount() {
     }
 }
 
+let btn = document.getElementById("login-btn");
+btn.onclick =
+function () {
+    alert('wala panglan to diko pa naayus');
+}
+
 // Make functions available globally
 window.changePage = changePage;
 window.quickView = quickView;

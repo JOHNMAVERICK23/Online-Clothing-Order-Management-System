@@ -82,7 +82,7 @@
                         </a>
                     </div>
                     
-                    <a href="../login.html" class="btn btn-light btn-sm">
+                    <a href="" class="btn btn-light btn-sm" id="login-btn">
                         <i class="bi bi-person"></i> Login
                     </a>
                 </div>
@@ -205,9 +205,9 @@
                 <div class="col-md-4">
                     <h5>Contact Info</h5>
                     <p>
-                        <i class="bi bi-geo-alt"></i> 123 Fashion Street, Manila<br>
-                        <i class="bi bi-telephone"></i> +63 917 123 4567<br>
-                        <i class="bi bi-envelope"></i> support@alascape.com
+                        <i class="bi bi-geo-alt"></i> <br>
+                        <i class="bi bi-telephone"></i> <br>
+                        <i class="bi bi-envelope"></i> 
                     </p>
                 </div>
             </div>

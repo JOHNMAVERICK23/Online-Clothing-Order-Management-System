@@ -251,3 +251,25 @@
     ::-webkit-scrollbar-thumb:hover {
     background: #2980b9;
     }
+
+    .checkout-btn{
+        background-color: black;
+        color: white;
+    }
+
+    .checkout-btn:hover{
+        background-color: white;
+        color: black;
+        border: 1px solid black;
+    }
+
+    .shopping-btn{
+        background-color: gray;
+        color: white;
+    }
+
+    .shopping-btn:hover{
+        background-color: white;
+        color: black;
+        border: 1px solid black;
+    }

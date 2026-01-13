@@ -278,8 +278,8 @@ if (isset($_GET['print'])) {
             <div class="company-name">ALAS ACE</div>
             <div class="company-tagline">Clothing & Fashion Store</div>
             <div style="font-size: 13px; opacity: 0.8;">
-                <div>📍 123 Fashion Street, Manila, Philippines</div>
-                <div>📞 +63 917 123 4567 | 📧 support@alascape.com</div>
+                <div><i class="bi-geo-alt-fill"></i> 123 Fashion Street, Manila, Philippines</div>
+                <div><i class="bi-telephone-fill"></i> +63 917 123 4567 | <i class="bi-envelope-fill"></i> support@alascape.com</div>
             </div>
         </div>
 
