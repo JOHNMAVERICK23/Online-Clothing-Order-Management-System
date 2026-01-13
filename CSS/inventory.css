@@ -1,0 +1,13 @@
+.stat-box { background: white; border-radius: 12px; padding: 25px; text-align: center; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); transition: transform 0.3s; border-left: 5px solid #3498db; }
+        .stat-box:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2); }
+        .stat-number { font-size: 36px; font-weight: 700; color: #1a1a1a; }
+        .stat-label { font-size: 14px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-icon { font-size: 40px; color: #3498db; margin-bottom: 15px; }
+        .stock-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .stock-in { background-color: #d4edda; color: #155724; }
+        .stock-low { background-color: #fff3cd; color: #856404; }
+        .stock-out { background-color: #f8d7da; color: #721c24; }
+        .product-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1.5fr; gap: 15px; padding: 15px; border-bottom: 1px solid #eee; align-items: center; }
+        .product-row:hover { background-color: #f9f9f9; }
+        .product-name { font-weight: 600; color: #1a1a1a; }
+        .product-category { font-size: 13px; color: #666; }
