@@ -250,8 +250,8 @@ function displayProducts(products) {
                                 <button class="btn btn-outline-primary btn-sm" onclick="quickView(${product.id})">
                                     <i class="bi bi-eye"></i> View
                                 </button>
-                                <button class="btn btn-primary btn-sm" onclick="addToCart(${product.id})">
-                                    <i class="bi bi-cart-plus"></i> Add to Cart
+                                <button class="btn btn-primary btn-sm btn-cart" onclick="addToCart(${product.id})">
+                                    <i class="bi bi-cart-plus"></i> 
                                 </button>
                             </div>
                         </div>

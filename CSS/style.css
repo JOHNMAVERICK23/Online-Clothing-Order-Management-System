@@ -121,7 +121,7 @@ body {
     background: white;
     border: 1px solid #ddd;
     border-radius: 4px;
-    padding: 20px;
+    padding: 16px;
     margin-bottom: 20px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
@@ -157,7 +157,19 @@ body {
     background-color: white;
     color: #1a1a1a;
     border: 1px solid #1a1a1a;
-    transition: 1s ease;
+    transition: 0.5s;
+}
+
+.btn-cart{
+    background-color: #1a1a1a;
+    color: white;
+    border: none;
+    padding: 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+    text-decoration: none;
 }
 
 .btn-secondary {

@@ -39,7 +39,7 @@
     border-radius: 10px;
     overflow: hidden;
     transition: all 0.3s ease;
-    height: 100%;
+    height: 90%;
     position: relative;
     }
     
@@ -66,7 +66,6 @@
     .product-card .card-title {
     font-size: 1.1rem;
     font-weight: 600;
-    margin-bottom: 10px;
     color: var(--primary);
     height: 2.4em;
     overflow: hidden;
@@ -75,7 +74,7 @@
     .product-card .card-text {
     color: #666;
     font-size: 0.9rem;
-    margin-bottom: 15px;
+    margin-bottom: 3px;
     height: 4.5em;
     overflow: hidden;
     }
