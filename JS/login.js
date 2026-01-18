@@ -1,81 +1,119 @@
-
 document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('loginForm');
     const submitBtn = loginForm ? loginForm.querySelector('button[type="submit"]') : null;
 
+    // Check if we're on login page
     if (!loginForm) return;
 
-    loginForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const email = document.getElementById('email').value.trim();
-        const password = document.getElementById('password').value;
+    // Check for session logout message
+    checkLogoutMessage();
 
-        // Validation
-        if (!email || !password) {
-            showToast('Please fill in all fields', 'error');
-            return;
-        }
+    // Load toast.js if not already loaded
+    if (typeof Toast === 'undefined') {
+        loadToastJS();
+    }
 
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            showToast('Please enter a valid email address', 'error');
-            return;
-        }
+    if (loginForm && submitBtn) {
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
 
-        // Disable button
-        const originalText = submitBtn.textContent;
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Logging in...';
-        submitBtn.style.opacity = '0.7';
-
-        try {
-            const formData = new FormData();
-            formData.append('email', email);
-            formData.append('password', password);
-
-            const response = await fetch('PROCESS/login.php', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            // Basic validation
+            if (!email || !password) {
+                Toast.error('Please fill in all fields');
+                return;
             }
 
-            const data = await response.json();
+            // Email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                Toast.error('Please enter a valid email address');
+                return;
+            }
 
-            if (data.success) {
-                showToast(data.message, 'success');
-                
-                // Store in sessionStorage
-                sessionStorage.setItem('user_email', email);
-                sessionStorage.setItem('user_role', data.user_role);
-                sessionStorage.setItem('user_name', data.user_name);
-                sessionStorage.setItem('logged_in', 'true');
-                
-                // Redirect
-                setTimeout(() => {
-                    window.location.href = data.redirect;
-                }, 1500);
-            } else {
-                showToast(data.message || 'Login failed', 'error');
+            // Disable submit button and show loading
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Logging in...';
+            submitBtn.style.opacity = '0.7';
+
+            try {
+                const formData = new FormData();
+                formData.append('email', email);
+                formData.append('password', password);
+
+                const response = await fetch('PROCESS/login.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    Toast.success(data.message);
+                    
+                    // Store user info in sessionStorage for dashboard
+                    sessionStorage.setItem('user_name', email.split('@')[0]);
+                    sessionStorage.setItem('user_email', email);
+                    sessionStorage.setItem('last_login', new Date().toISOString());
+                    
+                    // Show success message for 1.5 seconds before redirecting
+                    setTimeout(() => {
+                        window.location.href = data.redirect;
+                    }, 1500);
+                } else {
+                    Toast.error(data.message);
+                    resetLoginButton(submitBtn, originalText);
+                    
+                    // Shake animation for error
+                    triggerShakeAnimation(loginForm);
+                }
+            } catch (error) {
+                Toast.error('Network error. Please try again.');
+                console.error('Login error:', error);
                 resetLoginButton(submitBtn, originalText);
             }
-        } catch (error) {
-            console.error('Login error:', error);
-            showToast('Network error. Please try again.', 'error');
-            resetLoginButton(submitBtn, originalText);
-        }
-    });
+        });
+    }
+
+    // Add shake animation style
+    addShakeAnimationStyle();
 });
 
 function checkLogoutMessage() {
-    const logoutMessage = sessionStorage.getItem('logout_message');
+    // Check if there's a logout message (we'll use localStorage for this)
+    const logoutMessage = localStorage.getItem('logout_message');
     if (logoutMessage) {
-        showToast(logoutMessage, 'success');
-        sessionStorage.removeItem('logout_message');
+        Toast.success(logoutMessage);
+        localStorage.removeItem('logout_message'); // Clear after showing
     }
+}
+
+function loadToastJS() {
+    // Try to load toast.js from different paths
+    const paths = [
+        'JS/toast.js',
+        '../JS/toast.js',
+        '/JS/toast.js'
+    ];
+    
+    let loaded = false;
+    paths.forEach(path => {
+        if (!loaded) {
+            const script = document.createElement('script');
+            script.src = path;
+            script.onload = () => {
+                loaded = true;
+                console.log('Toast.js loaded from:', path);
+            };
+            script.onerror = () => {
+                console.log('Failed to load toast.js from:', path);
+            };
+            document.head.appendChild(script);
+        }
+    });
 }
 
 function resetLoginButton(button, originalText) {
@@ -110,43 +148,20 @@ function addShakeAnimationStyle() {
     }
 }
 
-// Toast notification function
-function showToast(message, type = 'info') {
-    let toastContainer = document.getElementById('toast-container');
-    if (!toastContainer) {
-        toastContainer = document.createElement('div');
-        toastContainer.id = 'toast-container';
-        toastContainer.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-            max-width: 350px;
-        `;
-        document.body.appendChild(toastContainer);
-    }
-
-    const toast = document.createElement('div');
-    toast.style.cssText = `
-        background: ${type === 'success' ? '#d4edda' : '#f8d7da'};
-        color: ${type === 'success' ? '#155724' : '#721c24'};
-        border: 1px solid ${type === 'success' ? '#c3e6cb' : '#f5c6cb'};
-        border-radius: 4px;
-        padding: 15px 20px;
-        margin-bottom: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    `;
-    toast.textContent = message;
-
-    toastContainer.appendChild(toast);
-
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 300);
-    }, 5000);
+// Simple Toast fallback if toast.js fails to load
+if (typeof Toast === 'undefined') {
+    window.Toast = {
+        success: function(msg) {
+            alert('Success: ' + msg);
+        },
+        error: function(msg) {
+            alert('Error: ' + msg);
+        },
+        info: function(msg) {
+            alert('Info: ' + msg);
+        },
+        warning: function(msg) {
+            alert('Warning: ' + msg);
+        }
+    };
 }
-
-window.Toast = {
-    success: function(msg) { showToast(msg, 'success'); },
-    error: function(msg) { showToast(msg, 'error'); }
-};

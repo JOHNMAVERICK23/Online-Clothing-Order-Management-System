@@ -1,309 +1,294 @@
 <?php
-session_start();
-
-// Initialize session variables
-if (!isset($_SESSION['cart'])) {
-    $_SESSION['cart'] = [];
-}
-if (!isset($_SESSION['wishlist'])) {
-    $_SESSION['wishlist'] = [];
-}
-
-// Database connection
-require_once '../PROCESS/db_config.php';
-
-// Get all active products
-$query = "SELECT p.*, c.name as category_name 
-          FROM products p 
-          LEFT JOIN categories c ON p.category_id = c.id 
-          WHERE p.is_active = TRUE 
-          ORDER BY p.created_at DESC";
-
-$result = $conn->query($query);
-$products = [];
-
-if ($result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-        $products[] = $row;
-    }
-}
-
-// Get categories for filter
-$categories = [];
-$catQuery = "SELECT DISTINCT c.* FROM categories c 
-             INNER JOIN products p ON c.id = p.category_id 
-             WHERE p.is_active = TRUE 
-             ORDER BY c.name";
-$catResult = $conn->query($catQuery);
-
-if ($catResult->num_rows > 0) {
-    while ($row = $catResult->fetch_assoc()) {
-        $categories[] = $row;
-    }
-}
-
-$user_logged_in = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
-$user_name = $_SESSION['user_name'] ?? 'Guest';
+// Public store page - no session required
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shop - Alas Clothing Shop</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
-    <link rel="stylesheet" href="css/main.css">
+    <title>Clothing Store - Browse Products</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../CSS/store.css">
+    <link rel="stylesheet" href="../CSS/style.css">
     <style>
-        .shop-container { max-width: 1400px; margin: 0 auto; padding: 2rem; padding-top: 7rem; }
-        .page-header { text-align: center; margin-bottom: 3rem; }
-        .page-header h1 { font-size: 2.5rem; font-weight: 300; letter-spacing: 2px; text-transform: uppercase; }
-        .filters { display: grid; grid-template-columns: 250px 1fr; gap: 2rem; }
-        .filter-sidebar { background: var(--light); border: 1px solid var(--border); padding: 1.5rem; }
-        .filter-group { margin-bottom: 2rem; }
-        .filter-group h3 { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.5px; }
-        .filter-option { margin-bottom: 0.8rem; }
-        .filter-option input { margin-right: 0.5rem; cursor: pointer; }
-        .filter-option label { cursor: pointer; font-size: 0.95rem; }
-        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; }
-        .product-card { background: var(--light); border: 1px solid var(--border); transition: all 0.3s; }
-        .product-card:hover { border-color: var(--dark); transform: translateY(-5px); }
-        .product-image { width: 100%; height: 250px; object-fit: cover; background: var(--gray-light); }
-        .product-info { padding: 1.5rem; }
-        .product-category { color: var(--gray); font-size: 0.8rem; text-transform: uppercase; margin-bottom: 0.5rem; }
-        .product-name { font-size: 1.05rem; font-weight: 500; margin-bottom: 0.5rem; color: var(--dark); }
-        .product-price { font-size: 1.3rem; font-weight: 600; margin-bottom: 1rem; color: var(--dark); }
-        .product-stock { font-size: 0.85rem; margin-bottom: 1rem; }
-        .stock-badge { padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; }
-        .stock-available { background: #d4edda; color: #155724; }
-        .stock-low { background: #fff3cd; color: #856404; }
-        .stock-out { background: #f8d7da; color: #721c24; }
-        .product-actions { display: flex; gap: 0.5rem; }
-        .btn { padding: 0.8rem 1.2rem; border: 1px solid var(--border); background: var(--light); color: var(--dark); border-radius: 0; font-weight: 500; cursor: pointer; transition: all 0.3s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; }
-        .btn:hover { border-color: var(--dark); }
-        .btn-primary { background: var(--dark); color: var(--light); border-color: var(--dark); }
-        .btn-primary:hover { background: var(--primary-dark); }
-        .btn-small { padding: 0.5rem 0.8rem; font-size: 0.8rem; }
-        .empty-products { grid-column: 1 / -1; text-align: center; padding: 3rem; }
-        @media (max-width: 992px) {
-            .filters { grid-template-columns: 1fr; }
-            .filter-sidebar { order: 2; }
-            .products-grid { order: 1; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+        .cart-icon-container {
+            position: relative;
+            display: inline-block;
         }
-        @media (max-width: 768px) {
-            .shop-container { padding: 1rem; }
-            .page-header h1 { font-size: 1.8rem; }
-            .filters { display: none; }
+        .cart-badge {
+            position: absolute;
+            top: -8px;
+            right: -10px;
+            background: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .cart-icon-link {
+            color: white;
+            text-decoration: none;
+            font-size: 20px;
+            transition: color 0.3s;
+        }
+        .cart-icon-link:hover {
+            color: #3498db;
         }
     </style>
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="customer-nav" id="customerNav">
-        <button class="mobile-menu-btn" id="mobileMenuBtn">
-            <i class="fas fa-bars"></i>
-        </button>
-        
-        <a href="index.php" class="nav-logo">
-            <img src="../../resources/images/logo.jpeg" alt="Alas Clothing Shop" class="logo-image">
-            <span class="brand-name">ALAS</span>
-        </a>
-        
-        <ul class="nav-menu" id="navMenu">
-            <li><a href="index.php">HOME</a></li>
-            <li><a href="shop.php" class="active">SHOP</a></li>
-            <li><a href="orders.php">MY ORDERS</a></li>
-            <li><a href="size_chart.php">SIZE CHART</a></li>
-            <li><a href="shipping.php">SHIPPING</a></li>
-        </ul>
-        
-        <div class="nav-right">
-            <a href="<?php echo $user_logged_in ? 'account.php' : 'login_register.php'; ?>" class="nav-icon" title="Account">
-                <i class="fas fa-user"></i>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="store.php">
+                <i class="bi bi-shop"></i> Alas Ace
             </a>
-            <a href="wishlist.php" class="nav-icon" title="Wishlist">
-                <i class="fas fa-heart"></i>
-                <?php if (!empty($_SESSION['wishlist'])): ?>
-                    <span class="wishlist-count-badge" id="wishlistCount"><?php echo count($_SESSION['wishlist']); ?></span>
-                <?php endif; ?>
-            </a>
-            <a href="cart_and_checkout.php" class="nav-icon" title="Cart">
-                <i class="fas fa-shopping-cart"></i>
-                <span class="cart-count-badge" id="cartCount"><?php echo count($_SESSION['cart']); ?></span>
-            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="store.php">Home</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="categoryDropdown" role="button" data-bs-toggle="dropdown">
+                            Categories
+                        </a>
+                        <ul class="dropdown-menu" id="categoryMenu">
+                            <li><a class="dropdown-item" href="#">Loading...</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="input-group me-3" style="width: 250px;">
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search products...">
+                        <button class="btn btn-outline-light" type="button" id="searchBtn">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- SHOPPING CART ICON -->
+                    <div class="cart-icon-container">
+                        <a href="cart.php" class="cart-icon-link" title="Shopping Cart">
+                            <i class="bi bi-cart3"></i>
+                            <span class="cart-badge" id="cartCount">0</span>
+                        </a>
+                    </div>
+                    
+                    <a href="" class="btn btn-light btn-sm" id="login-btn">
+                        <i class="bi bi-person"></i> Login
+                    </a>
+                </div>
+            </div>
         </div>
     </nav>
 
-    <div class="main-content">
-        <div class="shop-container">
-            <div class="page-header">
-                <h1>Shop Our Collection</h1>
-                <p class="page-subtitle">Browse our latest fashion items</p>
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title">Discover Your Style</h1>
+                <p class="hero-subtitle">Shop the latest trends in clothing and accessories</p>
+                <a href="#products" class="btn btn-primary btn-lg">Shop Now</a>
             </div>
+        </div>
+    </section>
 
-            <div class="filters">
-                <div class="filter-sidebar">
-                    <div class="filter-group">
-                        <h3>Categories</h3>
-                        <?php foreach ($categories as $cat): ?>
-                        <div class="filter-option">
-                            <input type="checkbox" id="cat-<?php echo $cat['id']; ?>" 
-                                   value="<?php echo $cat['id']; ?>" class="category-filter">
-                            <label for="cat-<?php echo $cat['id']; ?>"><?php echo htmlspecialchars($cat['name']); ?></label>
+    <!-- Main Content -->
+    <main class="container my-5" id="products">
+        <!-- Filters -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="card filter-card">
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <select class="form-select" id="categoryFilter">
+                                    <option value="">All Categories</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-select" id="sizeFilter">
+                                    <option value="">All Sizes</option>
+                                    <option value="XS">XS</option>
+                                    <option value="S">S</option>
+                                    <option value="M">M</option>
+                                    <option value="L">L</option>
+                                    <option value="XL">XL</option>
+                                    <option value="XXL">XXL</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-select" id="sortFilter">
+                                    <option value="newest">Newest First</option>
+                                    <option value="price_low">Price: Low to High</option>
+                                    <option value="price_high">Price: High to Low</option>
+                                    <option value="name">Name: A to Z</option>
+                                </select>
+                            </div>
                         </div>
-                        <?php endforeach; ?>
-                    </div>
-
-                    <div class="filter-group">
-                        <h3>Price Range</h3>
-                        <div class="filter-option">
-                            <label>
-                                Min: ₱<input type="number" id="priceMin" value="0" style="width: 80px; padding: 0.3rem;">
-                            </label>
-                        </div>
-                        <div class="filter-option">
-                            <label>
-                                Max: ₱<input type="number" id="priceMax" value="10000" style="width: 80px; padding: 0.3rem;">
-                            </label>
-                        </div>
-                        <button class="btn btn-primary" onclick="applyFilters()" style="width: 100%; margin-top: 1rem;">
-                            Apply Filters
-                        </button>
                     </div>
                 </div>
-
-                <div>
-                    <div class="products-grid" id="productsGrid">
-                        <?php if (empty($products)): ?>
-                        <div class="empty-products">
-                            <i class="fas fa-inbox" style="font-size: 3rem; color: var(--gray-light); margin-bottom: 1rem;"></i>
-                            <h3>No products available</h3>
-                            <p style="color: var(--gray);">Check back later for new items!</p>
-                        </div>
-                        <?php else: ?>
-                            <?php foreach ($products as $product): ?>
-                            <div class="product-card" data-product-id="<?php echo $product['id']; ?>">
-                                <img src="<?php echo htmlspecialchars($product['image_url'] ?: '../../resources/images/product-placeholder.jpg'); ?>" 
-                                     alt="<?php echo htmlspecialchars($product['name']); ?>" 
-                                     class="product-image">
-                                <div class="product-info">
-                                    <div class="product-category"><?php echo htmlspecialchars($product['category_name']); ?></div>
-                                    <h3 class="product-name"><?php echo htmlspecialchars($product['name']); ?></h3>
-                                    <div class="product-price">₱<?php echo number_format($product['price'], 2); ?></div>
-                                    <div class="product-stock">
-                                        <?php if ($product['stock_quantity'] > 10): ?>
-                                            <span class="stock-badge stock-available"><i class="fas fa-check-circle"></i> In Stock</span>
-                                        <?php elseif ($product['stock_quantity'] > 0): ?>
-                                            <span class="stock-badge stock-low"><i class="fas fa-exclamation-circle"></i> Low Stock</span>
-                                        <?php else: ?>
-                                            <span class="stock-badge stock-out"><i class="fas fa-times-circle"></i> Out of Stock</span>
-                                        <?php endif; ?>
-                                    </div>
-                                    <div class="product-actions">
-                                        <button class="btn btn-primary btn-small add-to-cart-btn" 
-                                                data-product-id="<?php echo $product['id']; ?>" 
-                                                onclick="addToCart(<?php echo $product['id']; ?>)" 
-                                                <?php echo $product['stock_quantity'] <= 0 ? 'disabled' : ''; ?>>
-                                            <i class="fas fa-cart-plus"></i> Add
-                                        </button>
-                                        <button class="btn btn-small add-to-wishlist-btn" 
-                                                data-product-id="<?php echo $product['id']; ?>"
-                                                onclick="addToWishlist(<?php echo $product['id']; ?>)">
-                                            <i class="fas fa-heart"></i> Save
-                                        </button>
-                                    </div>
-                                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card filter-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span id="productCount">Loading products...</span>
+                            <div class="btn-group">
+                                <button class="btn btn-outline-secondary active" id="gridViewBtn" title="Grid View">
+                                    <i class="bi bi-grid-3x3-gap"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary" id="listViewBtn" title="List View">
+                                    <i class="bi bi-list"></i>
+                                </button>
                             </div>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Products Grid -->
+        <div id="productsContainer" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+            <!-- Products will be loaded here -->
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3">Loading products...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="text-center py-5 d-none">
+            <i class="bi bi-emoji-frown display-1 text-muted"></i>
+            <h3 class="mt-3">No products found</h3>
+            <p class="text-muted">Try adjusting your search or filters</p>
+            <button class="btn btn-primary" id="resetFiltersBtn">Reset Filters</button>
+        </div>
+
+        <!-- Pagination -->
+        <nav aria-label="Product pagination" class="mt-5">
+            <ul class="pagination justify-content-center" id="pagination">
+                <!-- Pagination will be loaded here -->
+            </ul>
+        </nav>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5>Clothing Store</h5>
+                    <p>Your one-stop shop for fashionable clothing and accessories.</p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="store.php" class="text-white-50 text-decoration-none">Home</a></li>
+                        <li><a href="#products" class="text-white-50 text-decoration-none">Products</a></li>
+                        <li><a href="cart.php" class="text-white-50 text-decoration-none">Cart</a></li>
+                        <li><a href="../login.html" class="text-white-50 text-decoration-none">Staff Login</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>Contact Info</h5>
+                    <p>
+                        <i class="bi bi-geo-alt"></i> <br>
+                        <i class="bi bi-telephone"></i> <br>
+                        <i class="bi bi-envelope"></i> 
+                    </p>
+                </div>
+            </div>
+            <hr class="bg-light">
+            <div class="text-center">
+                <p class="mb-0">&copy; 2024 Alas Ace. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Product Quick View Modal -->
+    <div class="modal fade" id="quickViewModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="productModalTitle"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <img id="productModalImage" src="" class="img-fluid rounded" alt="">
+                        </div>
+                        <div class="col-md-6">
+                            <h3 id="productModalName"></h3>
+                            <div class="mb-3">
+                                <span class="h4 text-primary" id="productModalPrice"></span>
+                                <span class="badge bg-success ms-2" id="productModalStock"></span>
+                            </div>
+                            <p id="productModalDescription"></p>
+                            <div class="mb-3">
+                                <strong>Category:</strong> <span id="productModalCategory"></span>
+                            </div>
+                            <div class="mb-3">
+                                <strong>Available Sizes:</strong> <span id="productModalSizes"></span>
+                            </div>
+                            <div class="mb-3">
+                                <strong>Colors:</strong> <span id="productModalColors"></span>
+                            </div>
+                            <div class="mt-4">
+                                <button class="btn btn-primary btn-lg" id="addToCartBtn">
+                                    <i class="bi bi-cart-plus"></i> Add to Cart
+                                </button>
+                                <button class="btn btn-outline-secondary btn-lg ms-2" data-bs-dismiss="modal">
+                                    Continue Shopping
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="footer-content">
-            <div class="footer-section">
-                <h3>About Us</h3>
-                <p>Alas Clothing Shop offers premium quality clothing for every occasion.</p>
+    <!-- Cart Toast Notification -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050">
+        <div id="cartToast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="bi bi-cart-check text-success me-2"></i>
+                <strong class="me-auto">Added to Cart</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
             </div>
-            <div class="footer-section">
-                <h3>Quick Links</h3>
-                <ul class="footer-links">
-                    <li><a href="shop.php"><i class="fas fa-chevron-right"></i> Shop</a></li>
-                    <li><a href="orders.php"><i class="fas fa-chevron-right"></i> My Orders</a></li>
-                    <li><a href="account.php"><i class="fas fa-chevron-right"></i> Account</a></li>
-                </ul>
+            <div class="toast-body">
+                Product added to cart successfully! <a href="cart.php" style="color: #3498db; font-weight: 600;">View Cart</a>
             </div>
         </div>
-        <div class="footer-bottom">
-            <p>&copy; <?php echo date('Y'); ?> Alas Clothing Shop. All rights reserved.</p>
-        </div>
-    </footer>
+    </div>
 
-    <script src="js/main.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../JS/store.js"></script>
     <script>
-        function addToCart(productId) {
-            const quantity = 1;
-            // Update session/local storage
-            const carts = JSON.parse(localStorage.getItem('cart') || '[]');
-            const exists = carts.find(c => c.product_id == productId);
-            
-            if (exists) {
-                exists.quantity += quantity;
-            } else {
-                carts.push({ product_id: productId, quantity: quantity });
-            }
-            
-            localStorage.setItem('cart', JSON.stringify(carts));
-            
-            // Update cart badge
-            document.getElementById('cartCount').textContent = carts.length;
-            
-            alert('Product added to cart!');
+        // Update cart count on page load
+        function updateCartCount() {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            document.getElementById('cartCount').textContent = totalItems;
         }
 
-        function addToWishlist(productId) {
-            const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
-            
-            if (!wishlist.includes(productId)) {
-                wishlist.push(productId);
-                localStorage.setItem('wishlist', JSON.stringify(wishlist));
-                
-                if (document.getElementById('wishlistCount')) {
-                    document.getElementById('wishlistCount').textContent = wishlist.length;
-                }
-                
-                alert('Added to wishlist!');
-            } else {
-                alert('Already in your wishlist!');
-            }
-        }
-
-        function applyFilters() {
-            // Get selected categories
-            const categories = Array.from(document.querySelectorAll('.category-filter:checked'))
-                .map(cb => cb.value);
-            
-            const minPrice = parseFloat(document.getElementById('priceMin').value) || 0;
-            const maxPrice = parseFloat(document.getElementById('priceMax').value) || 10000;
-            
-            console.log('Filtering by:', { categories, minPrice, maxPrice });
-            // Add AJAX call here to filter products
-        }
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            const cartCount = JSON.parse(localStorage.getItem('cart') || '[]').length;
-            const wishlistCount = JSON.parse(localStorage.getItem('wishlist') || '[]').length;
-            
-            document.getElementById('cartCount').textContent = cartCount;
-            if (wishlistCount > 0 && document.getElementById('wishlistCount')) {
-                document.getElementById('wishlistCount').textContent = wishlistCount;
-            }
-        });
+        // Update cart count whenever it changes
+        window.addEventListener('storage', updateCartCount);
+        document.addEventListener('DOMContentLoaded', updateCartCount);
     </script>
 </body>
 </html>

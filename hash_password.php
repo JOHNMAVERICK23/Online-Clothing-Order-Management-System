@@ -1,3 +1,5 @@
 <?php
-echo password_hash('admin123', PASSWORD_BCRYPT);
+$password = 'admin123';
+$hashed = password_hash($password, PASSWORD_BCRYPT);
+echo "Hashed Password: " . $hashed;
 ?>

@@ -1,5 +1,3 @@
-// Common functions for the entire application
-
 function logoutUser() {
     if (confirm('Are you sure you want to logout?')) {
         // Set a flag in localStorage that will be checked once on login page
