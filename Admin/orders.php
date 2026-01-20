@@ -91,6 +91,7 @@ if ($result->num_rows > 0) {
             <li><a href="accounts.html"><i class="bi bi-people"></i> Manage Accounts</a></li>
             <li><a href="products.html"><i class="bi bi-box-seam"></i> Products</a></li>
             <li><a href="orders.php" class="active"><i class="bi bi-receipt"></i> Orders</a></li>
+            <li><a href="inventory.php"><i class="bi bi-boxes"></i>Inventory</a></li>
             <li><a href="activity.html"><i class="bi bi-clock-history"></i> Activity Log</a></li>
             <li><a href="../PROCESS/logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
         </ul>

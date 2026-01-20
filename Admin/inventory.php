@@ -1,5 +1,6 @@
+<?php
 session_start();
-require_once 'PROCESS/db_config.php';
+require_once '../PROCESS/db_config.php';
 
 // Check if user is logged in and is admin
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
@@ -140,19 +141,19 @@ while ($cat = $categoryResult->fetch_assoc()) {
     <title>Inventory Management - Clothing Management System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="CSS/style.css">
-    <link rel="stylesheet" href="CSS/inventory.css">
+    <link rel="stylesheet" href="../CSS/style.css">
+    <link rel="stylesheet" href="../CSS/inventory.css">
 </head>
 <body>
     <div class="sidebar">
         <div class="sidebar-logo">Admin</div>
         <ul class="sidebar-menu sidebar-scroll">
-            <li><a href="Admin/dashboard.html"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
-            <li><a href="Admin/accounts.html"><i class="bi bi-people"></i> Manage Accounts</a></li>
-            <li><a href="Admin/products.html"><i class="bi bi-box-seam"></i> Products</a></li>
-            <li><a href="Admin/orders.php"><i class="bi bi-receipt"></i> Orders</a></li>
+            <li><a href="dashboard.html"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+            <li><a href="accounts.html"><i class="bi bi-people"></i> Manage Accounts</a></li>
+            <li><a href="products.html"><i class="bi bi-box-seam"></i> Products</a></li>
+            <li><a href="orders.php"><i class="bi bi-receipt"></i> Orders</a></li>
             <li><a href="inventory.php" class="active"><i class="bi bi-boxes"></i> Inventory</a></li>
-            <li><a href="Admin/activity.html"><i class="bi bi-clock-history"></i> Activity Log</a></li>
+            <li><a href="activity.html"><i class="bi bi-clock-history"></i> Activity Log</a></li>
             <li><a href="PROCESS/logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
         </ul>
     </div>

@@ -23,13 +23,31 @@ function setupImagePreview() {
         selectedImageFile = file;
         
         if (file) {
+            // Validate file
+            const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            if (!validTypes.includes(file.type)) {
+                alert('Invalid file type. Please upload JPG, PNG, GIF, or WebP');
+                imageInput.value = '';
+                selectedImageFile = null;
+                previewDiv.innerHTML = '';
+                return;
+            }
+            
+            if (file.size > 5 * 1024 * 1024) {
+                alert('File size exceeds 5MB limit');
+                imageInput.value = '';
+                selectedImageFile = null;
+                previewDiv.innerHTML = '';
+                return;
+            }
+            
             // Show preview
             const reader = new FileReader();
             reader.onload = function(e) {
                 previewDiv.innerHTML = `
                     <img src="${e.target.result}" 
                          class="product-image-lg" 
-                         style="border: 2px solid #ddd; border-radius: 8px;">
+                         style="border: 2px solid #ddd; border-radius: 8px; max-width: 150px; height: auto;">
                     <div class="small text-muted mt-1">Preview</div>
                 `;
             };
@@ -41,7 +59,6 @@ function setupImagePreview() {
 }
 
 function setupEventListeners() {
-    // Modal buttons
     const btnAddProduct = document.getElementById('btnAddProduct');
     const closeModal = document.getElementById('closeModal');
     const cancelBtn = document.getElementById('cancelBtn');
@@ -58,7 +75,6 @@ function setupEventListeners() {
     if (cancelBtn) cancelBtn.addEventListener('click', closeProductModal);
     if (productForm) productForm.addEventListener('submit', submitProduct);
     
-    // Search and filters
     if (searchInput) {
         searchInput.addEventListener('keyup', function(e) {
             currentFilters.search = e.target.value.toLowerCase();
@@ -80,11 +96,9 @@ function setupEventListeners() {
         });
     }
     
-    // Export buttons
     if (btnExportCSV) btnExportCSV.addEventListener('click', exportToCSV);
     if (btnPrint) btnPrint.addEventListener('click', printProducts);
     
-    // Close modal when clicking outside
     if (productModal) {
         productModal.addEventListener('click', function(e) {
             if (e.target.id === 'productModal') {
@@ -98,20 +112,6 @@ function getProductImage(product) {
     if (product.image_url && product.image_url.trim() !== '') {
         return product.image_url;
     }
-    
-    // Return placeholder based on category
-    const placeholders = {
-        'T-Shirts': 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=150&h=150&fit=crop',
-        'Shirts': 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=150&h=150&fit=crop',
-        'Pants': 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=150&h=150&fit=crop',
-        'Jeans': 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=150&h=150&fit=crop',
-        'Dresses': 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=150&h=150&fit=crop',
-        'Skirts': 'https://images.unsplash.com/photo-1594633313593-ba5ccbacffb1?w=150&h=150&fit=crop',
-        'Jackets': 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=150&h=150&fit=crop',
-        'Shoes': 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=150&h=150&fit=crop',
-        'Accessories': 'https://images.unsplash.com/photo-1556306535-0f09a537f0a3?w=150&h=150&fit=crop'
-    };
-    
     return getLocalPlaceholder(product.category);
 }
 
@@ -123,7 +123,7 @@ function loadProducts() {
         .then(data => {
             if (data.success) {
                 allProducts = data.products;
-                filterProducts(); // Apply any existing filters
+                filterProducts();
             } else {
                 Toast.error('Failed to load products');
                 updateProductCount(0);
@@ -145,7 +145,6 @@ function loadProductStats() {
                 animateCounter('activeProducts', data.activeProducts);
                 animateCounter('lowStock', data.lowStock);
                 
-                // Format total value
                 const totalValue = parseFloat(data.totalValue) || 0;
                 document.getElementById('totalValue').textContent = 
                     '₱' + totalValue.toLocaleString('en-US', {
@@ -194,7 +193,6 @@ function displayProducts(products) {
             </tr>
         `;
         
-        // Add event listener to the button
         setTimeout(() => {
             const btn = document.getElementById('btnAddFirstProduct');
             if (btn) {
@@ -213,7 +211,7 @@ function displayProducts(products) {
             '<span class="badge badge-active">Active</span>' : 
             '<span class="badge badge-inactive">Inactive</span>';
         
-        const imageUrl = getProductImage(product); // USE THE FUNCTION HERE
+        const imageUrl = getProductImage(product);
         const sizes = product.size ? product.size.split(',') : [];
         const colors = product.color ? product.color.split(',') : [];
         
@@ -228,10 +226,10 @@ function displayProducts(products) {
         html += `
             <tr>
                 <td>
-                <img src="${imageUrl}" 
-                alt="${product.product_name}" 
-                class="product-image"
-                onerror="this.src='${getLocalPlaceholder(product.category)}'">
+                    <img src="${imageUrl}" 
+                        alt="${product.product_name}" 
+                        class="product-image"
+                        onerror="this.src='${getLocalPlaceholder(product.category)}'">
                 </td>
                 <td>
                     <strong>${product.product_name}</strong>
@@ -273,12 +271,8 @@ function displayProducts(products) {
 }
 
 function getLocalPlaceholder(category) {
-    // Simple gray placeholder na naka-embed sa code
-    // Hindi na kailangan ng internet connection
     const categoryText = category || 'Product';
     
-    // Base64 encoded na simple gray image
-    // Ito ay embedded image - hindi na kailangan mag-load ng external website
     const grayPlaceholder = 'data:image/svg+xml;base64,' + btoa(`
         <svg xmlns="http://www.w3.org/2000/svg" width="150" height="150">
             <rect width="150" height="150" fill="#cccccc"/>
@@ -361,15 +355,12 @@ function openAddModal() {
     document.getElementById('status').value = 'active';
     document.getElementById('currentImage').value = '';
     document.getElementById('imagePreview').innerHTML = '';
+    document.getElementById('productImage').value = '';
     selectedImageFile = null;
     currentImageUrl = '';
     
-    // Reset file input
-    document.getElementById('productImage').value = '';
-    
     document.getElementById('productModal').classList.add('active');
 }
-
 
 function editProduct(id) {
     const product = allProducts.find(p => p.id == id);
@@ -386,24 +377,22 @@ function editProduct(id) {
     document.getElementById('size').value = product.size || '';
     document.getElementById('color').value = product.color || '';
     
-    // Handle image preview for editing
     currentImageUrl = product.image_url || '';
     document.getElementById('currentImage').value = currentImageUrl;
     
     const previewDiv = document.getElementById('imagePreview');
-    if (currentImageUrl) {
+    if (currentImageUrl && currentImageUrl.trim() !== '') {
         previewDiv.innerHTML = `
             <img src="${currentImageUrl}" 
                  class="product-image-lg" 
-                 style="border: 2px solid #ddd; border-radius: 8px;"
-                 onerror="this.src='https://via.placeholder.com/150?text=No+Image'">
+                 style="border: 2px solid #ddd; border-radius: 8px; max-width: 150px; height: auto;"
+                 onerror="this.src='${getLocalPlaceholder(product.category)}'">
             <div class="small text-muted mt-1">Current Image</div>
         `;
     } else {
         previewDiv.innerHTML = '';
     }
     
-    // Reset file input
     document.getElementById('productImage').value = '';
     selectedImageFile = null;
     
@@ -414,7 +403,6 @@ function viewProduct(id) {
     const product = allProducts.find(p => p.id == id);
     if (!product) return;
     
-    // You can create a detailed view modal here
     alert(`Product Details:\n\nName: ${product.product_name}\nCategory: ${product.category}\nPrice: ₱${product.price}\nQuantity: ${product.quantity}\nStatus: ${product.status}`);
 }
 
@@ -425,7 +413,6 @@ function closeProductModal() {
 async function submitProduct(e) {
     e.preventDefault();
     
-    // Upload image first if selected
     let imageUrl = document.getElementById('currentImage').value;
     
     if (selectedImageFile) {
@@ -440,7 +427,6 @@ async function submitProduct(e) {
         }
     }
     
-    // Continue with form submission...
     const productId = document.getElementById('productId').value;
     const productName = document.getElementById('productName').value.trim();
     const description = document.getElementById('description').value.trim();
@@ -451,7 +437,6 @@ async function submitProduct(e) {
     const size = document.getElementById('size').value;
     const color = document.getElementById('color').value.trim();
     
-    // Validation
     if (!productName || !category || !price || !quantity) {
         Toast.error('Please fill in all required fields');
         return;
@@ -518,15 +503,12 @@ function deleteProduct(id) {
     });
 }
 
-// Export Functions
 function exportToCSV() {
     let csvContent = "data:text/csv;charset=utf-8,";
     
-    // Headers
     const headers = ["ID", "Product Name", "Category", "Price", "Quantity", "Status", "Created At"];
     csvContent += headers.join(",") + "\n";
     
-    // Data
     allProducts.forEach(product => {
         const row = [
             product.id,
@@ -540,7 +522,6 @@ function exportToCSV() {
         csvContent += row.join(",") + "\n";
     });
     
-    // Create download link
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);

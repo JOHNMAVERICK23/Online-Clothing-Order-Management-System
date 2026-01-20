@@ -1,7 +1,7 @@
 let allProducts = [];
 let currentPage = 1;
 const productsPerPage = 12;
-let currentView = 'grid'; // 'grid' or 'list'
+let currentView = 'grid';
 let currentFilters = {
     category: '',
     size: '',
@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function setupEventListeners() {
-    // Search
     document.getElementById('searchInput').addEventListener('keyup', function(e) {
         if (e.key === 'Enter') {
             searchProducts();
@@ -25,7 +24,6 @@ function setupEventListeners() {
     
     document.getElementById('searchBtn').addEventListener('click', searchProducts);
     
-    // Filters
     document.getElementById('categoryFilter').addEventListener('change', function(e) {
         currentFilters.category = e.target.value;
         currentPage = 1;
@@ -44,7 +42,6 @@ function setupEventListeners() {
         filterProducts();
     });
     
-    // View toggle
     document.getElementById('gridViewBtn').addEventListener('click', function() {
         setView('grid');
     });
@@ -53,10 +50,8 @@ function setupEventListeners() {
         setView('list');
     });
     
-    // Reset filters
     document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
     
-    // Quick view modal
     const quickViewModal = document.getElementById('quickViewModal');
     if (quickViewModal) {
         quickViewModal.addEventListener('hidden.bs.modal', function() {
@@ -105,10 +100,8 @@ function populateCategories() {
     
     if (!categoryFilter || !categoryMenu) return;
     
-    // Get unique categories
     const categories = [...new Set(allProducts.map(p => p.category))].sort();
     
-    // Update category filter dropdown
     categories.forEach(category => {
         const option = document.createElement('option');
         option.value = category;
@@ -116,7 +109,6 @@ function populateCategories() {
         categoryFilter.appendChild(option);
     });
     
-    // Update category menu
     categoryMenu.innerHTML = '<li><a class="dropdown-item" href="#" data-category="">All Categories</a></li>';
     categories.forEach(category => {
         const li = document.createElement('li');
@@ -139,12 +131,10 @@ function populateCategories() {
 
 function filterProducts() {
     let filtered = allProducts.filter(product => {
-        // Filter by category
         if (currentFilters.category && product.category !== currentFilters.category) {
             return false;
         }
         
-        // Filter by size
         if (currentFilters.size && product.size) {
             const sizes = product.size.split(',').map(s => s.trim());
             if (!sizes.includes(currentFilters.size)) {
@@ -152,7 +142,6 @@ function filterProducts() {
             }
         }
         
-        // Filter by search
         if (currentFilters.search) {
             const searchTerm = currentFilters.search.toLowerCase();
             const searchFields = [
@@ -170,25 +159,19 @@ function filterProducts() {
         return true;
     });
     
-    // Apply sorting
     filtered = sortProducts(filtered);
     
-    // Update product count
     updateProductCount(filtered.length);
     
-    // Paginate
     const totalPages = Math.ceil(filtered.length / productsPerPage);
     const startIndex = (currentPage - 1) * productsPerPage;
     const endIndex = startIndex + productsPerPage;
     const paginatedProducts = filtered.slice(startIndex, endIndex);
     
-    // Display products
     displayProducts(paginatedProducts);
     
-    // Update pagination
     updatePagination(totalPages, filtered.length);
     
-    // Show empty state if no products
     if (filtered.length === 0) {
         showEmptyState('No products match your filters. Try adjusting your search criteria.');
     } else {
@@ -224,7 +207,7 @@ function displayProducts(products) {
     
     products.forEach(product => {
         const stockStatus = getStockStatus(product.quantity);
-        const imageUrl = product.image_url || getPlaceholderImage(product.category);
+        const imageUrl = getProductImageUrl(product);
         const sizes = product.size ? product.size.split(',').map(s => s.trim()) : [];
         const colors = product.color ? product.color.split(',').map(c => c.trim()) : [];
         
@@ -277,6 +260,17 @@ function displayProducts(products) {
     container.innerHTML = html;
 }
 
+// CRITICAL FIX: Properly handle image URLs
+function getProductImageUrl(product) {
+    // If product has an image URL stored in database
+    if (product.image_url && product.image_url.trim() !== '') {
+        return product.image_url;
+    }
+    
+    // Return placeholder if no image
+    return getPlaceholderImage(product.category);
+}
+
 function getStockStatus(quantity) {
     if (quantity <= 0) {
         return { class: 'text-danger', text: 'Out of Stock' };
@@ -288,7 +282,6 @@ function getStockStatus(quantity) {
 }
 
 function getPlaceholderImage(category) {
-    // Local placeholder without internet
     const categoryText = category || 'Product';
     
     const localPlaceholder = 'data:image/svg+xml;base64,' + btoa(`
@@ -330,14 +323,12 @@ function updatePagination(totalPages, totalProducts) {
     
     let html = '';
     
-    // Previous button
     html += `
         <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
             <a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Previous</a>
         </li>
     `;
     
-    // Page numbers
     const maxPagesToShow = 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
     let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
@@ -354,7 +345,6 @@ function updatePagination(totalPages, totalProducts) {
         `;
     }
     
-    // Next button
     html += `
         <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
             <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Next</a>
@@ -449,7 +439,7 @@ function quickView(productId) {
     const modal = new bootstrap.Modal(document.getElementById('quickViewModal'));
     
     document.getElementById('productModalTitle').textContent = product.product_name;
-    document.getElementById('productModalImage').src = product.image_url || getPlaceholderImage(product.category);
+    document.getElementById('productModalImage').src = getProductImageUrl(product);
     document.getElementById('productModalName').textContent = product.product_name;
     document.getElementById('productModalPrice').textContent = `₱${parseFloat(product.price).toFixed(2)}`;
     
@@ -462,7 +452,6 @@ function quickView(productId) {
     document.getElementById('productModalSizes').textContent = product.size || 'N/A';
     document.getElementById('productModalColors').textContent = product.color || 'N/A';
     
-    // Update add to cart button
     const addToCartBtn = document.getElementById('addToCartBtn');
     addToCartBtn.onclick = function() {
         addToCart(productId);
@@ -473,7 +462,6 @@ function quickView(productId) {
 }
 
 function setupCart() {
-    // Initialize cart in localStorage if not exists
     if (!localStorage.getItem('cart')) {
         localStorage.setItem('cart', JSON.stringify([]));
     }
@@ -490,7 +478,6 @@ function addToCart(productId) {
     
     let cart = JSON.parse(localStorage.getItem('cart')) || [];
     
-    // Check if product already in cart
     const existingItem = cart.find(item => item.id == productId);
     
     if (existingItem) {
@@ -505,18 +492,16 @@ function addToCart(productId) {
             name: product.product_name,
             price: product.price,
             quantity: 1,
-            image: product.image_url || getPlaceholderImage(product.category),
+            image: getProductImageUrl(product),
             maxQuantity: product.quantity
         });
     }
     
     localStorage.setItem('cart', JSON.stringify(cart));
     
-    // Show toast notification
     const cartToast = new bootstrap.Toast(document.getElementById('cartToast'));
     cartToast.show();
     
-    // Update cart count in navbar if exists
     updateCartCount();
 }
 
@@ -524,7 +509,6 @@ function updateCartCount() {
     const cart = JSON.parse(localStorage.getItem('cart')) || [];
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
     
-    // You can add cart count display in navbar if needed
     const cartCountElement = document.getElementById('cartCount');
     if (cartCountElement) {
         cartCountElement.textContent = totalItems;
@@ -532,12 +516,12 @@ function updateCartCount() {
 }
 
 let btn = document.getElementById("login-btn");
-btn.onclick =
-function () {
-    alert('wala panglan to diko pa naayus');
+if (btn) {
+    btn.onclick = function () {
+        alert('wala panglan to diko pa naayus');
+    };
 }
 
-// Make functions available globally
 window.changePage = changePage;
 window.quickView = quickView;
 window.addToCart = addToCart;
