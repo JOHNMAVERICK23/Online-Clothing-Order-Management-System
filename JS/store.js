@@ -231,7 +231,7 @@ function displayProducts(products) {
                             <span class="product-price">₱${parseFloat(product.price).toFixed(2)}</span>
                             <div class="product-actions">
                                 <button class="btn btn-outline-primary btn-sm" onclick="quickView(${product.id})">
-                                    <i class="bi bi-eye"></i> View
+                                    <i class="bi bi-eye"></i>
                                 </button>
                                 <button class="btn btn-primary btn-sm btn-cart" onclick="addToCart(${product.id})">
                                     <i class="bi bi-cart-plus"></i> 

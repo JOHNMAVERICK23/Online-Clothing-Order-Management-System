@@ -7,9 +7,9 @@ echo "Testing Login API<br>";
 echo "Database Connection: ";
 
 if ($conn) {
-    echo "✓ Connected<br>";
+    echo "Connected<br>";
 } else {
-    echo "✗ Failed: " . mysqli_connect_error() . "<br>";
+    echo "Failed: " . mysqli_connect_error() . "<br>";
     exit;
 }
 
@@ -22,7 +22,7 @@ $stmt->bind_param("s", $email);
 $stmt->execute();
 $result = $stmt->get_result();
 
-echo "User found: " . ($result->num_rows > 0 ? '✓ Yes' : '✗ No') . "<br>";
+echo "User found: " . ($result->num_rows > 0 ? 'Yes' : 'No') . "<br>";
 
 if ($result->num_rows > 0) {
     $user = $result->fetch_assoc();

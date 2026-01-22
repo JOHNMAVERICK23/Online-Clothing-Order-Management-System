@@ -15,7 +15,7 @@ function logoutUser() {
 // Check for logout message on login page
 function checkLogoutMessage() {
     // Only run on login page
-    if (window.location.pathname.includes('index.html') || 
+    if (window.location.pathname.includes('login.html') || 
         window.location.pathname.endsWith('/')) {
         
         const showLogout = localStorage.getItem('show_logout_message');
@@ -70,7 +70,7 @@ function checkAuth() {
     }
     
     // For demo purposes only - in real app, use proper session checking
-    const protectedPages = ['dashboard.html', 'accounts.html', 'orders.html'];
+    const protectedPages = ['dashboard.html', 'accounts.html', 'orders.html, products.html', 'inventory.php'];
     const currentPage = window.location.pathname.split('/').pop();
     
     if (protectedPages.includes(currentPage)) {
