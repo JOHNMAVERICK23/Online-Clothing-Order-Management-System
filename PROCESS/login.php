@@ -77,7 +77,7 @@ $logStmt->bind_param("isss", $user['id'], $action, $ip_address, $user_agent);
 $logStmt->execute();
 
 // Determine redirect URL based on role
-$redirectUrl = $user['role'] === 'admin' ? 'Admin/dashboard.html' : 'staff/dashboard.html';
+$redirectUrl = $user['role'] === 'admin' ? 'Admin/dashboard.html' : 'staff/orders.php';
 
 echo json_encode([
     'success' => true,

@@ -65,6 +65,14 @@ if ($result->num_rows > 0) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="../CSS/style.css">
     <style>
+        :root {
+    --primary: #1a1a1a;
+    --secondary: #3498db;
+    --success: #2ecc71;
+    --danger: #e74c3c;
+    --warning: #f39c12;
+    --info: #3498db;
+    }
         .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
         .status-pending { background-color: #fff3cd; color: #856404; }
         .status-processing { background-color: #cfe2ff; color: #084298; }
@@ -81,15 +89,55 @@ if ($result->num_rows > 0) {
         .order-items { margin: 15px 0; padding: 15px; background: #f9f9f9; border-radius: 4px; }
         .item-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e0e0e0; }
         .item-row:last-child { border-bottom: none; }
+        .stat-box {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    border-left: 5px solid var(--secondary);
+    height: 100%;
+    }
+    
+    .stat-box:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    }
+    .stat-box.primary { border-left-color: var(--primary); }
+    .stat-box.success { border-left-color: var(--primary); }
+    .stat-box.warning { border-left-color: var(--primary); }
+    .stat-box.info { border-left-color: var(--primary); }
+    .stat-box.danger { border-left-color: var(--primary); }
+    
+    .stat-number {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 5px;
+    }
+    
+    .stat-label {
+    font-size: 14px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    }
+    
+    .stat-icon {
+    font-size: 32px;
+    color: var(--secondary);
+    margin-bottom: 10px;
+    }
     </style>
 </head>
 <body>
     <div class="sidebar">
         <div class="sidebar-logo">Admin</div>
         <ul class="sidebar-menu">
-            <li><a href="dashboard.html"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
-            <li><a href="orders.php" class="active"><i class="bi bi-receipt"></i> Orders</a></li>
-            <li><a href="products.html"><i class="bi bi-box-seam"></i> Products</a></li>
+            <li><a href="orders.php" class="active"><i class="bi bi-receipt"></i> Orders Management</a></li>
+            <li><a href="products.html"><i class="bi bi-box-seam"></i> Products Management</a></li>
+            <li><a href="staff_report.php"><i class="bi bi-file-earmark-bar-graph"></i> Sales Report</a></li>
             <li><a href="../PROCESS/logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
         </ul>
     </div>

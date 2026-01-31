@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Check if user is logged in (simple check)
 function checkAuth() {
     // Skip auth check for login page
-    if (window.location.pathname.includes('index.html') || 
+    if (window.location.pathname.includes('login.html') || 
         window.location.pathname.endsWith('/')) {
         return;
     }
