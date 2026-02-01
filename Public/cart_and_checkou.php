@@ -1074,7 +1074,7 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
         </a>
         
         <ul class="nav-menu" id="navMenu">
-            <li><a href="index.php">HOME</a></li>
+            <li><a href="../index.php">HOME</a></li>
             <li><a href="shop.php">SHOP</a></li>
             <li><a href="orders.php">MY ORDERS</a></li>
             <li><a href="size_chart.php">SIZE CHART</a></li>
@@ -1517,7 +1517,7 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
             <div class="footer-section">
                 <h3>Quick Links</h3>
                 <ul class="footer-links">
-                    <li><a href="index.php"><i class="fas fa-chevron-right"></i> Home</a></li>
+                    <li><a href="../index.php"><i class="fas fa-chevron-right"></i> Home</a></li>
                     <li><a href="shop.php"><i class="fas fa-chevron-right"></i> Shop</a></li>
                     <li><a href="size_chart.php"><i class="fas fa-chevron-right"></i> Size Chart</a></li>
                     <li><a href="shipping.php"><i class="fas fa-chevron-right"></i> Shipping & Returns</a></li>

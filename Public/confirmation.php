@@ -7,7 +7,7 @@ $orderNumber = $_GET['order_number'] ?? '';
 $paymentMethod = $_GET['payment_method'] ?? '';
 
 if (!$orderId) {
-    header('Location: store.html');
+    header('Location: ../index.php');
     exit;
 }
 
@@ -230,7 +230,7 @@ while ($item = $itemsResult->fetch_assoc()) {
                 <a href="receipt.php?order_id=<?php echo $orderId; ?>" class="btn-custom btn-primary-custom">
                     <i class="bi bi-file-text"></i> View Receipt
                 </a>
-                <a href="store.html" class="btn-custom btn-secondary-custom">
+                <a href="../index.php" class="btn-custom btn-secondary-custom">
                     <i class="bi bi-shop"></i> Continue Shopping
                 </a>
             </div>

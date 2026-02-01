@@ -16,7 +16,7 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
         <div class="container">
-            <a class="navbar-brand" href="store.php">
+            <a class="navbar-brand" href="../index.php">
                 <i class="bi bi-shop"></i> Alas Ace
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -25,7 +25,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="store.php">Home</a>
+                        <a class="nav-link" href="../index.php">Home</a>
                     </li>
                 </ul>
                 <div class="d-flex align-items-center gap-3">
@@ -58,7 +58,7 @@
                             </div>
                             <h3>Your cart is empty</h3>
                             <p class="text-muted">Add some products to get started!</p>
-                            <a href="store.php" class="btn btn-primary mt-3">Continue Shopping</a>
+                            <a href="../index.php" class="btn btn-primary mt-3">Continue Shopping</a>
                         </div>
                     </div>
                 </div>
@@ -90,7 +90,7 @@
                         <i class="bi bi-credit-card"></i> Proceed to Checkout
                     </button>
 
-                    <a href="store.php" class="btn btn-outline-secondary w-100 mt-2 shopping-btn">
+                    <a href="../index.php" class="btn btn-outline-secondary w-100 mt-2 shopping-btn">
                         <i class="bi bi-arrow-left"></i> Continue Shopping
                     </a>
 
@@ -132,7 +132,7 @@
                         </div>
                         <h3>Your cart is empty</h3>
                         <p class="text-muted">Add some products to get started!</p>
-                        <a href="store.php" class="btn btn-primary mt-3">Continue Shopping</a>
+                        <a href="../index.php" class="btn btn-primary mt-3">Continue Shopping</a>
                     </div>
                 `;
                 disableCheckout();

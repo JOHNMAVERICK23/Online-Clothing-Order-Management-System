@@ -1,0 +1,64 @@
+:root {
+    --primary: #1a1a1a;
+    --secondary: #3498db;
+    --success: #2ecc71;
+    --danger: #e74c3c;
+    --warning: #f39c12;
+    --info: #3498db;
+    }
+        .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .status-pending { background-color: #fff3cd; color: #856404; }
+        .status-processing { background-color: #cfe2ff; color: #084298; }
+        .status-shipped { background-color: #212222; color: #055160; }
+        .status-delivered { background-color: #d1e7dd; color: #0f5132; }
+        .status-cancelled { background-color: #f8d7da; color: #721c24; }
+        .order-card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
+        .order-number { font-size: 18px; font-weight: 700; color: #1a1a1a; }
+        .order-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        .info-item { padding: 10px; background: #f9f9f9; border-radius: 4px; }
+        .info-label { font-size: 12px; color: #666; text-transform: uppercase; }
+        .info-value { font-size: 14px; font-weight: 600; color: #1a1a1a; margin-top: 5px; }
+        .order-items { margin: 15px 0; padding: 15px; background: #f9f9f9; border-radius: 4px; }
+        .item-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e0e0e0; }
+        .item-row:last-child { border-bottom: none; }
+        .stat-box {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    border-left: 5px solid var(--secondary);
+    height: 100%;
+    }
+    
+    .stat-box:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    }
+    .stat-box.primary { border-left-color: var(--primary); }
+    .stat-box.success { border-left-color: var(--primary); }
+    .stat-box.warning { border-left-color: var(--primary); }
+    .stat-box.info { border-left-color: var(--primary); }
+    .stat-box.danger { border-left-color: var(--primary); }
+    
+    .stat-number {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 5px;
+    }
+    
+    .stat-label {
+    font-size: 14px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    }
+    
+    .stat-icon {
+    font-size: 32px;
+    color: var(--secondary);
+    margin-bottom: 10px;
+    }

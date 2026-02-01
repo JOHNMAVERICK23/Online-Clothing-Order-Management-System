@@ -6,7 +6,7 @@ $orderId = $_GET['order_id'] ?? '';
 $paymentMethod = $_GET['payment_method'] ?? '';
 
 if (!$orderId) {
-    header('Location: store.html');
+    header('Location: ../index.php');
     exit;
 }
 

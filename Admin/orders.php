@@ -64,24 +64,7 @@ if ($result->num_rows > 0) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="../CSS/style.css">
-    <style>
-        .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-        .status-pending { background-color: #fff3cd; color: #856404; }
-        .status-processing { background-color: #cfe2ff; color: #084298; }
-        .status-shipped { background-color: #cff4fc; color: #055160; }
-        .status-delivered { background-color: #d1e7dd; color: #0f5132; }
-        .status-cancelled { background-color: #f8d7da; color: #721c24; }
-        .order-card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
-        .order-number { font-size: 18px; font-weight: 700; color: #1a1a1a; }
-        .order-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
-        .info-item { padding: 10px; background: #f9f9f9; border-radius: 4px; }
-        .info-label { font-size: 12px; color: #666; text-transform: uppercase; }
-        .info-value { font-size: 14px; font-weight: 600; color: #1a1a1a; margin-top: 5px; }
-        .order-items { margin: 15px 0; padding: 15px; background: #f9f9f9; border-radius: 4px; }
-        .item-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e0e0e0; }
-        .item-row:last-child { border-bottom: none; }
-    </style>
+    <link rel="stylesheet" href="../CSS/orders.css">
 </head>
 <body>
     <div class="sidebar">

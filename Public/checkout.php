@@ -184,7 +184,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                             <a href="cart.php" class="btn btn-outline-secondary btn-lg w-100 mt-2">
                                 <i class="bi bi-arrow-left"></i> Back to Cart
                             </a>
-                            <a href="store.php" class="btn btn-outline-secondary btn-lg w-100 mt-2">
+                            <a href="../index.php" class="btn btn-outline-secondary btn-lg w-100 mt-2">
                                 <i class="bi bi-shop"></i> Continue Shopping
                             </a>
                         </div>

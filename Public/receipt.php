@@ -448,7 +448,7 @@ if (isset($_GET['print'])) {
             <a href="?order_id=<?php echo $orderId; ?>&download=pdf" class="btn-action btn-download">
                 <i class="bi bi-file-pdf"></i> Download PDF
             </a>
-            <a href="store.html" class="btn-action btn-back">
+            <a href="../index.php" class="btn-action btn-back">
                 <i class="bi bi-arrow-left"></i> Back to Store
             </a>
         </div>

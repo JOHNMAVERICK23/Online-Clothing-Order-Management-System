@@ -129,7 +129,7 @@ foreach ($sampleProducts as $product) {
 
 echo "<h1>Sample Products Added</h1>";
 echo "<p>Successfully added $inserted sample products.</p>";
-echo "<p><a href='../Public/Store.html'>View Store</a></p>";
+echo "<p><a href='../index.php'>View Store</a></p>";
 
 $conn->close();
 ?>
