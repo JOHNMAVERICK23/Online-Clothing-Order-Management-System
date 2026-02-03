@@ -154,7 +154,7 @@ while ($cat = $categoryResult->fetch_assoc()) {
             <li><a href="products.html"><i class="bi bi-box-seam"></i> Products Management</a></li>
             <li><a href="orders.php"><i class="bi bi-receipt"></i> Orders Management</a></li>
             <li><a href="inventory.php" class="active"><i class="bi bi-boxes"></i> Inventory</a></li>
-            <li><a href="PROCESS/logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+            <li><a href="../PROCESS/logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
         </ul>
     </div>
 
@@ -163,7 +163,7 @@ while ($cat = $categoryResult->fetch_assoc()) {
             <div class="topbar-title"><i class="bi bi-boxes"></i> Inventory Management</div>
             <div class="user-info">
                 <span class="user-role">ADMIN</span>
-                <a href="PROCESS/logout.php" class="btn-logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
+                <a href="../PROCESS/logout.php" class="btn-logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
             </div>
         </div>
 
@@ -408,7 +408,7 @@ while ($cat = $categoryResult->fetch_assoc()) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function viewHistory(productId) {
-            alert('Stock history for Product ID: ' + productId + '\n\nFeature coming soon...');
+            window.location.href = 'stock_history.php?product_id=' + productId;
         }
     </script>
 </body>

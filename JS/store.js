@@ -71,6 +71,7 @@ function setupEventListeners() {
 function loadProducts() {
     showLoading(true);
     
+    // FIXED: Correct path for root-level index.php
     fetch('../PROCESS/getPublicProducts.php')
         .then(response => {
             if (!response.ok) throw new Error('Network response was not ok');

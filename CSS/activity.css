@@ -24,9 +24,9 @@
 }
 
 .stat-box.primary { border-left-color: var(--primary); }
-.stat-box.success { border-left-color: var(--success); }
-.stat-box.warning { border-left-color: var(--warning); }
-.stat-box.danger { border-left-color: var(--danger); }
+.stat-box.success { border-left-color: var(--primary); }
+.stat-box.warning { border-left-color: var(--primary); }
+.stat-box.danger { border-left-color: var(--primary); }
 
 .stat-number {
     font-size: 36px;
@@ -92,7 +92,7 @@
 
 .badge.bg-success {
     background-color: #d4edda;
-    color: #155724;
+    color: white;
 }
 
 .badge.bg-danger {
@@ -112,7 +112,7 @@
 
 .badge.bg-secondary {
     background-color: #e2e3e5;
-    color: #383d41;
+    color: white;
 }
 
 .badge.bg-light {

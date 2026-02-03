@@ -1,5 +1,6 @@
 <?php
-require_once '../PROCESS/db_config.php'; // Update path if needed
+// Updated path reference for root-level structure
+require_once __DIR__ . '/db_config.php';
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');

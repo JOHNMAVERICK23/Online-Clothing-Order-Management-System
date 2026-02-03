@@ -9,8 +9,8 @@
     <title>Clothing Store - Browse Products</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="/CSS/store.css">
-    <link rel="stylesheet" href="/CSS/style.css">
+    <link rel="stylesheet" href="./CSS/store.css">
+    <link rel="stylesheet" href="./CSS/style.css">
     <style>
         .cart-icon-container {
             position: relative;
@@ -76,7 +76,7 @@
                     
                     <!-- SHOPPING CART ICON -->
                     <div class="cart-icon-container">
-                        <a href="/Public/cart.php" class="cart-icon-link" title="Shopping Cart">
+                        <a href="./Public/cart.php" class="cart-icon-link" title="Shopping Cart">
                             <i class="bi bi-cart3"></i>
                             <span class="cart-badge" id="cartCount">0</span>
                         </a>
@@ -198,7 +198,7 @@
                     <ul class="list-unstyled">
                         <li><a href="index.php" class="text-white-50 text-decoration-none">Home</a></li>
                         <li><a href="#products" class="text-white-50 text-decoration-none">Products</a></li>
-                        <li><a href="/Public/cart.php" class="text-white-50 text-decoration-none">Cart</a></li>
+                        <li><a href="./Public/cart.php" class="text-white-50 text-decoration-none">Cart</a></li>
                         <li><a href="login.html" class="text-white-50 text-decoration-none">Staff Login</a></li>
                     </ul>
                 </div>
@@ -271,13 +271,13 @@
                 <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
             </div>
             <div class="toast-body">
-                Product added to cart successfully! <a href="/Public/cart.php" style="color: #3498db; font-weight: 600;">View Cart</a>
+                Product added to cart successfully! <a href="./Public/cart.php" style="color: #3498db; font-weight: 600;">View Cart</a>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/JS/store.js"></script>
+    <script src="./JS/store.js"></script>
     <script>
         // Update cart count on page load
         function updateCartCount() {
