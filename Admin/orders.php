@@ -76,6 +76,7 @@ if ($result->num_rows > 0) {
             <li><a href="products.html"><i class="bi bi-box-seam"></i> Products Management</a></li>
             <li><a href="orders.php" class="active"><i class="bi bi-receipt"></i> Orders Management</a></li>
             <li><a href="inventory.php"><i class="bi bi-boxes"></i>Inventory</a></li>
+            <li><a href="cms.php"><i class="bi bi-file-earmark-text"></i> Content Management</a></li>
             <li><a href="../PROCESS/logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
         </ul>
     </div>

@@ -15,22 +15,58 @@ if (!isset($_SESSION['wishlist'])) {
 $is_logged_in = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
 $user_name = isset($_SESSION['user_name']) ? $_SESSION['user_name'] : 'Guest';
 $user_type = isset($_SESSION['user_type']) ? $_SESSION['user_type'] : 'guest';
+$customer_id = isset($_SESSION['customer_id']) ? $_SESSION['customer_id'] : null;
+$user_email = isset($_SESSION['user_email']) ? $_SESSION['user_email'] : '';
 
 // Database connection
 $host = 'localhost';
-$dbname = 'clothing_shop';
+$dbname = 'clothing_management_system';
 $username = 'root';
 $password = '';
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
+    // Check if required tables exist
+    $check_tables = $pdo->query("SHOW TABLES LIKE 'orders'");
+    if ($check_tables->rowCount() == 0) {
+        die("Orders table not found in database. Please run the database setup.");
+    }
+    
+    // Check if orders table has required columns
+    $check_columns = $pdo->query("SHOW COLUMNS FROM orders");
+    $order_columns = $check_columns->fetchAll(PDO::FETCH_COLUMN);
+    
+    $required_columns = ['order_number', 'customer_name', 'customer_email', 'customer_phone', 'shipping_address', 'total_amount', 'status', 'payment_status'];
+    foreach ($required_columns as $col) {
+        if (!in_array($col, $order_columns)) {
+            die("Missing required column '$col' in orders table. Please check your database structure.");
+        }
+    }
+    
 } catch (PDOException $e) {
     die("Database connection failed: " . $e->getMessage());
 }
 
-// Handle cart actions (for both guests and logged in users)
+// Handle cart actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Product selection for checkout
+    if (isset($_POST['select_for_checkout'])) {
+        $selected_items = isset($_POST['selected_items']) ? $_POST['selected_items'] : [];
+        $_SESSION['checkout_items'] = [];
+        
+        // Convert selected item IDs to cart items
+        foreach ($_SESSION['cart'] as $cart_item) {
+            if (in_array($cart_item['product_id'], $selected_items)) {
+                $_SESSION['checkout_items'][] = $cart_item;
+            }
+        }
+        
+        header('Location: cart_and_checkout.php?checkout=1');
+        exit;
+    }
+    
     if (isset($_POST['update_quantity'])) {
         $product_id = intval($_POST['product_id']);
         $quantity = intval($_POST['quantity']);
@@ -40,7 +76,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($quantity > 0) {
                     $item['quantity'] = $quantity;
                 } else {
-                    // Remove item if quantity is 0
                     $key = array_search($item, $_SESSION['cart']);
                     if ($key !== false) {
                         unset($_SESSION['cart'][$key]);
@@ -50,6 +85,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 break;
             }
         }
+        
+        // Update checkout items if they exist
+        if (isset($_SESSION['checkout_items'])) {
+            foreach ($_SESSION['checkout_items'] as &$item) {
+                if ($item['product_id'] == $product_id) {
+                    if ($quantity > 0) {
+                        $item['quantity'] = $quantity;
+                    } else {
+                        $key = array_search($item, $_SESSION['checkout_items']);
+                        if ($key !== false) {
+                            unset($_SESSION['checkout_items'][$key]);
+                            $_SESSION['checkout_items'] = array_values($_SESSION['checkout_items']);
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        
+        header('Location: cart_and_checkout.php');
+        exit;
     }
     
     if (isset($_POST['remove_item'])) {
@@ -62,21 +118,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 break;
             }
         }
+        
+        // Remove from checkout items if exists
+        if (isset($_SESSION['checkout_items'])) {
+            foreach ($_SESSION['checkout_items'] as $key => $item) {
+                if ($item['product_id'] == $product_id) {
+                    unset($_SESSION['checkout_items'][$key]);
+                    $_SESSION['checkout_items'] = array_values($_SESSION['checkout_items']);
+                    break;
+                }
+            }
+        }
+        
+        header('Location: cart_and_checkout.php');
+        exit;
     }
     
     if (isset($_POST['clear_cart'])) {
         $_SESSION['cart'] = [];
+        unset($_SESSION['checkout_items']);
+        header('Location: cart_and_checkout.php');
+        exit;
     }
     
     if (isset($_POST['move_to_wishlist'])) {
         $product_id = intval($_POST['product_id']);
         
-        // Initialize wishlist if not exists
         if (!isset($_SESSION['wishlist'])) {
             $_SESSION['wishlist'] = [];
         }
         
-        // Remove from cart
         foreach ($_SESSION['cart'] as $key => $item) {
             if ($item['product_id'] == $product_id) {
                 unset($_SESSION['cart'][$key]);
@@ -85,29 +156,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         
-        // Add to wishlist if not already there
         if (!in_array($product_id, $_SESSION['wishlist'])) {
             $_SESSION['wishlist'][] = $product_id;
         }
+        
+        // Also remove from checkout items
+        if (isset($_SESSION['checkout_items'])) {
+            foreach ($_SESSION['checkout_items'] as $key => $item) {
+                if ($item['product_id'] == $product_id) {
+                    unset($_SESSION['checkout_items'][$key]);
+                    $_SESSION['checkout_items'] = array_values($_SESSION['checkout_items']);
+                    break;
+                }
+            }
+        }
+        
+        header('Location: cart_and_checkout.php');
+        exit;
     }
 }
 
-// Handle checkout (requires login)
+// Initialize checkout items
+if (!isset($_SESSION['checkout_items'])) {
+    $_SESSION['checkout_items'] = [];
+}
+
+// Handle checkout
 $checkout_error = '';
 $checkout_success = false;
 $order_number = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
     if (!$is_logged_in) {
-        // Redirect to login with checkout redirect
-        header('Location: ../LANDING PAGE/login_register.php?redirect=checkout');
+        header('Location: login_register.php?redirect=checkout');
         exit;
     }
     
     if (empty($_SESSION['cart'])) {
         $checkout_error = "Your cart is empty!";
     } else {
-        // Get form data
         $shipping_name = trim($_POST['shipping_name']);
         $shipping_phone = trim($_POST['shipping_phone']);
         $shipping_address = trim($_POST['shipping_address']);
@@ -117,7 +204,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
         $payment_method = $_POST['payment_method'];
         $notes = trim($_POST['notes'] ?? '');
         
-        // Validate required fields
         if (empty($shipping_name) || empty($shipping_phone) || empty($shipping_address) || 
             empty($shipping_city) || empty($shipping_province) || empty($shipping_zip)) {
             $checkout_error = "Please fill in all required shipping information.";
@@ -126,30 +212,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
                 $pdo->beginTransaction();
                 
                 // Generate order number
-                $order_number = 'ORD' . date('Ymd') . str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
+                $order_number = 'ORD' . date('YmdHis') . str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
                 
-                // Get cart totals
+                // Use checkout items or all cart items
+                $checkout_items = !empty($_SESSION['checkout_items']) ? $_SESSION['checkout_items'] : $_SESSION['cart'];
+                
                 $subtotal = 0;
                 $total_items = 0;
+                $items_data = [];
                 
-                // Get cart products with details
-                if (!empty($_SESSION['cart'])) {
-                    $product_ids = array_column($_SESSION['cart'], 'product_id');
-                    $placeholders = str_repeat('?,', count($product_ids) - 1) . '?';
-                    $stmt = $pdo->prepare("SELECT p.* FROM products p WHERE p.id IN ($placeholders) AND p.is_active = TRUE");
-                    $stmt->execute($product_ids);
-                    $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                // Get product details and calculate totals
+                foreach ($checkout_items as $cart_item) {
+                    $stmt = $pdo->prepare("SELECT * FROM products WHERE id = ? AND status = 'active'");
+                    $stmt->execute([$cart_item['product_id']]);
+                    $product = $stmt->fetch(PDO::FETCH_ASSOC);
                     
-                    // Calculate totals
-                    foreach ($products as $product) {
-                        foreach ($_SESSION['cart'] as $cart_item) {
-                            if ($cart_item['product_id'] == $product['id']) {
-                                $subtotal += $product['price'] * $cart_item['quantity'];
-                                $total_items += $cart_item['quantity'];
-                                break;
-                            }
+                    if ($product) {
+                        if ($product['quantity'] < $cart_item['quantity']) {
+                            throw new Exception("Not enough stock for {$product['product_name']}. Available: {$product['quantity']}, Requested: {$cart_item['quantity']}");
                         }
+                        
+                        $item_total = $product['price'] * $cart_item['quantity'];
+                        $subtotal += $item_total;
+                        $total_items += $cart_item['quantity'];
+                        
+                        $items_data[] = [
+                            'product' => $product,
+                            'cart_item' => $cart_item,
+                            'item_total' => $item_total
+                        ];
                     }
+                }
+                
+                if (empty($items_data)) {
+                    throw new Exception("No valid items found in cart.");
                 }
                 
                 $shipping_fee = 50.00;
@@ -157,55 +253,106 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
                 $tax_amount = $subtotal * $tax_rate;
                 $total = $subtotal + $shipping_fee + $tax_amount;
                 
-                // Insert order
+                // Create full shipping address
+                $full_shipping_address = implode(', ', array_filter([
+                    $shipping_address,
+                    $shipping_city,
+                    $shipping_province,
+                    $shipping_zip
+                ]));
+                
+                // FIXED: Insert order with ALL required columns for admin
                 $order_stmt = $pdo->prepare("INSERT INTO orders 
-                    (user_id, order_number, shipping_name, shipping_phone, shipping_address, 
-                     shipping_city, shipping_province, shipping_zip, payment_method, notes,
-                     subtotal, shipping_fee, tax_amount, total_amount, status) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')");
+                    (order_number, customer_id, customer_name, customer_email, customer_phone, 
+                     shipping_address, total_amount, status, payment_status, notes, created_at) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', 'pending', ?, NOW())");
+                
+                $customer_email = $user_email ?: 'guest@example.com';
+                
+                // Use customer_id if logged in, otherwise NULL
+                $order_customer_id = $is_logged_in && $customer_id ? $customer_id : NULL;
                 
                 $order_stmt->execute([
-                    $_SESSION['user_id'], $order_number, $shipping_name, $shipping_phone, $shipping_address,
-                    $shipping_city, $shipping_province, $shipping_zip, $payment_method, $notes,
-                    $subtotal, $shipping_fee, $tax_amount, $total
+                    $order_number, 
+                    $order_customer_id,
+                    $shipping_name, 
+                    $customer_email,
+                    $shipping_phone, // This goes to customer_phone column (admin expects this)
+                    $full_shipping_address,
+                    $total,
+                    $notes
                 ]);
                 
                 $order_id = $pdo->lastInsertId();
                 
                 // Insert order items
                 $order_item_stmt = $pdo->prepare("INSERT INTO order_items 
-                    (order_id, product_id, product_name, quantity, unit_price, total_price) 
-                    VALUES (?, ?, ?, ?, ?, ?)");
+                    (order_id, product_id, quantity, price, subtotal) 
+                    VALUES (?, ?, ?, ?, ?)");
                 
-                foreach ($products as $product) {
-                    foreach ($_SESSION['cart'] as $cart_item) {
-                        if ($cart_item['product_id'] == $product['id']) {
-                            $order_item_stmt->execute([
-                                $order_id,
-                                $product['id'],
-                                $product['name'],
-                                $cart_item['quantity'],
-                                $product['price'],
-                                $product['price'] * $cart_item['quantity']
-                            ]);
-                            
-                            // Update product stock
-                            $update_stmt = $pdo->prepare("UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?");
-                            $update_stmt->execute([$cart_item['quantity'], $product['id']]);
+                foreach ($items_data as $item) {
+                    $order_item_stmt->execute([
+                        $order_id,
+                        $item['product']['id'],
+                        $item['cart_item']['quantity'],
+                        $item['product']['price'],
+                        $item['item_total']
+                    ]);
+                    
+                    // Update stock
+                    $update_stmt = $pdo->prepare("UPDATE products SET quantity = quantity - ? WHERE id = ?");
+                    $update_stmt->execute([$item['cart_item']['quantity'], $item['product']['id']]);
+                }
+                
+                // FIXED: Update customer information in customers table
+                if ($customer_id) {
+                    try {
+                        $update_customer_stmt = $pdo->prepare("UPDATE customers SET shipping_address = ?, contact_number = ? WHERE id = ?");
+                        $update_customer_stmt->execute([
+                            $full_shipping_address,
+                            $shipping_phone,
+                            $customer_id
+                        ]);
+                    } catch (Exception $e) {
+                        // Log error but continue
+                        error_log("Customer update failed: " . $e->getMessage());
+                    }
+                }
+                
+                // FIXED: Create payment record with reference number
+                $payment_stmt = $pdo->prepare("INSERT INTO payments 
+                    (order_id, customer_id, amount, payment_method, status, reference_number) 
+                    VALUES (?, ?, ?, ?, 'pending', ?)");
+                    
+                $reference_number = '';
+                if ($payment_method !== 'cod') {
+                    $reference_number = 'PAY' . date('YmdHis') . mt_rand(1000, 9999);
+                }
+                
+                $payment_stmt->execute([
+                    $order_id,
+                    $customer_id ?: 0,
+                    $total,
+                    $payment_method,
+                    $reference_number
+                ]);
+                
+                $pdo->commit();
+                
+                // Remove purchased items from cart
+                foreach ($checkout_items as $item) {
+                    foreach ($_SESSION['cart'] as $key => $cart_item) {
+                        if ($cart_item['product_id'] == $item['product_id']) {
+                            unset($_SESSION['cart'][$key]);
                             break;
                         }
                     }
                 }
+                $_SESSION['cart'] = array_values($_SESSION['cart']);
                 
-                // Update user shipping info
-                $update_user_stmt = $pdo->prepare("UPDATE users SET address = ?, phone = ? WHERE id = ?");
-                $full_address = $shipping_address . ', ' . $shipping_city . ', ' . $shipping_province . ' ' . $shipping_zip;
-                $update_user_stmt->execute([$full_address, $shipping_phone, $_SESSION['user_id']]);
+                // Clear checkout items
+                unset($_SESSION['checkout_items']);
                 
-                $pdo->commit();
-                
-                // Clear cart and set success
-                $_SESSION['cart'] = [];
                 $checkout_success = true;
                 
             } catch (Exception $e) {
@@ -223,52 +370,99 @@ $total_items = 0;
 
 if (!empty($_SESSION['cart'])) {
     $product_ids = array_column($_SESSION['cart'], 'product_id');
-    $placeholders = str_repeat('?,', count($product_ids) - 1) . '?';
-    $stmt = $pdo->prepare("SELECT p.*, c.name as category_name 
-                          FROM products p 
-                          LEFT JOIN categories c ON p.category_id = c.id 
-                          WHERE p.id IN ($placeholders) AND p.is_active = TRUE");
-    $stmt->execute($product_ids);
-    $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Combine with cart quantities
-    foreach ($products as $product) {
-        foreach ($_SESSION['cart'] as $cart_item) {
-            if ($cart_item['product_id'] == $product['id']) {
-                $product['cart_quantity'] = $cart_item['quantity'];
-                $product['item_total'] = $product['price'] * $cart_item['quantity'];
-                $cart_products[] = $product;
-                $subtotal += $product['item_total'];
-                $total_items += $cart_item['quantity'];
-                break;
+    if (!empty($product_ids)) {
+        $placeholders = str_repeat('?,', count($product_ids) - 1) . '?';
+        
+        $stmt = $pdo->prepare("SELECT p.* FROM products p WHERE p.id IN ($placeholders) AND p.status = 'active'");
+        $stmt->execute($product_ids);
+        $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        foreach ($products as $product) {
+            foreach ($_SESSION['cart'] as $cart_item) {
+                if ($cart_item['product_id'] == $product['id']) {
+                    $product['cart_quantity'] = $cart_item['quantity'];
+                    $product['item_total'] = $product['price'] * $cart_item['quantity'];
+                    
+                    // Check if item is selected for checkout
+                    $is_selected = false;
+                    if (!empty($_SESSION['checkout_items'])) {
+                        foreach ($_SESSION['checkout_items'] as $checkout_item) {
+                            if ($checkout_item['product_id'] == $product['id']) {
+                                $is_selected = true;
+                                break;
+                            }
+                        }
+                    } else {
+                        // If no checkout items, all items are selected by default
+                        $is_selected = true;
+                    }
+                    
+                    $product['selected'] = $is_selected;
+                    $cart_products[] = $product;
+                    
+                    if ($product['selected']) {
+                        $subtotal += $product['item_total'];
+                        $total_items += $cart_item['quantity'];
+                    }
+                    break;
+                }
             }
         }
     }
 }
 
-// Calculate totals
-$shipping_fee = $subtotal > 0 ? 50.00 : 0;
+// Calculate checkout totals
+$checkout_products = [];
+$checkout_subtotal = 0;
+$checkout_items = 0;
+
+if (!empty($_SESSION['checkout_items'])) {
+    $checkout_product_ids = array_column($_SESSION['checkout_items'], 'product_id');
+    if (!empty($checkout_product_ids)) {
+        $placeholders = str_repeat('?,', count($checkout_product_ids) - 1) . '?';
+        
+        $stmt = $pdo->prepare("SELECT p.* FROM products p WHERE p.id IN ($placeholders) AND p.status = 'active'");
+        $stmt->execute($checkout_product_ids);
+        $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        foreach ($products as $product) {
+            foreach ($_SESSION['checkout_items'] as $item) {
+                if ($item['product_id'] == $product['id']) {
+                    $product['cart_quantity'] = $item['quantity'];
+                    $product['item_total'] = $product['price'] * $item['quantity'];
+                    $checkout_products[] = $product;
+                    $checkout_subtotal += $product['item_total'];
+                    $checkout_items += $item['quantity'];
+                    break;
+                }
+            }
+        }
+    }
+}
+
+// Use checkout totals if we have selected items
+$display_subtotal = !empty($_SESSION['checkout_items']) ? $checkout_subtotal : $subtotal;
+$display_items = !empty($_SESSION['checkout_items']) ? $checkout_items : $total_items;
+
+// Calculate final totals
+$shipping_fee = $display_subtotal > 0 ? 50.00 : 0;
 $tax_rate = 0.12;
-$tax_amount = $subtotal * $tax_rate;
-$total = $subtotal + $shipping_fee + $tax_amount;
+$tax_amount = $display_subtotal * $tax_rate;
+$total = $display_subtotal + $shipping_fee + $tax_amount;
 
-// Get user data for checkout form (if logged in)
-$user_data = [];
-if ($is_logged_in) {
-    $stmt = $pdo->prepare("SELECT name, email, phone, address FROM users WHERE id = ?");
-    $stmt->execute([$_SESSION['user_id']]);
-    $user_data = $stmt->fetch(PDO::FETCH_ASSOC);
+// Get customer data
+$customer_data = [];
+if ($is_logged_in && isset($_SESSION['customer_id'])) {
+    $stmt = $pdo->prepare("SELECT first_name, last_name, email, contact_number, shipping_address FROM customers WHERE id = ?");
+    $stmt->execute([$_SESSION['customer_id']]);
+    $customer_data = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($customer_data) {
+        $customer_data['full_name'] = trim($customer_data['first_name'] . ' ' . $customer_data['last_name']);
+    }
 }
 
-// Handle logout
-if (isset($_GET['logout'])) {
-    session_destroy();
-    header('Location: login_register.php');
-    exit;
-}
-
-// Check if we should show checkout form (from query parameter or after adding to cart)
-$show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
+// Check if we should show checkout form
+$show_checkout = isset($_GET['checkout']) || ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order']));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -280,7 +474,157 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
     <link rel="stylesheet" href="css/main.css">
     <style>
-        /* ONLY CART & CHECKOUT SPECIFIC STYLES */
+        /* FIXED CHECKBOX STYLING */
+        .item-checkbox {
+            position: relative;
+            width: 20px;
+            height: 20px;
+        }
+
+        .item-checkbox input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 100%;
+            width: 100%;
+            z-index: 2;
+            margin: 0;
+        }
+
+        .checkmark {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 20px;
+            width: 20px;
+            background-color: var(--light);
+            border: 2px solid var(--border);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .item-checkbox:hover input ~ .checkmark {
+            border-color: var(--dark);
+        }
+
+        .item-checkbox input:checked ~ .checkmark {
+            background-color: var(--dark);
+            border-color: var(--dark);
+        }
+
+        .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+        }
+
+        .item-checkbox input:checked ~ .checkmark:after {
+            display: block;
+        }
+
+        .item-checkbox .checkmark:after {
+            left: 6px;
+            top: 2px;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        /* SELECT ALL CHECKBOX */
+        .select-all-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .select-all-checkbox input[type="checkbox"] {
+            display: none;
+        }
+
+        .select-all-checkbox .checkmark {
+            position: relative;
+            width: 18px;
+            height: 18px;
+            background-color: var(--light);
+            border: 2px solid var(--border);
+            border-radius: 3px;
+            transition: all 0.3s;
+        }
+
+        .select-all-checkbox input:checked ~ .checkmark {
+            background-color: var(--dark);
+            border-color: var(--dark);
+        }
+
+        .select-all-checkbox .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+            left: 5px;
+            top: 2px;
+            width: 4px;
+            height: 8px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .select-all-checkbox input:checked ~ .checkmark:after {
+            display: block;
+        }
+
+        /* CART ITEM LAYOUT */
+        .cart-item {
+            display: grid;
+            grid-template-columns: 30px 100px 1fr auto;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+        }
+
+        @media (max-width: 768px) {
+            .cart-item {
+                grid-template-columns: 30px 1fr;
+                gap: 1rem;
+            }
+            
+            .item-image {
+                grid-column: 2;
+                justify-self: center;
+            }
+            
+            .item-controls {
+                grid-column: 1 / span 2;
+            }
+        }
+
+        /* REST OF YOUR CSS STYLES (keep as is) */
+        .selection-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background: var(--gray-light);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .select-all {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--dark);
+        }
+
+        .selected-count {
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+
         .shop-container {
             max-width: 1400px;
             margin: 0 auto;
@@ -307,7 +651,6 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
             font-weight: 300;
         }
 
-        /* Checkout Steps */
         .checkout-steps {
             display: flex;
             justify-content: center;
@@ -373,7 +716,6 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
             z-index: 1;
         }
 
-        /* Layout */
         .content-layout {
             display: grid;
             grid-template-columns: 2fr 1fr;
@@ -386,7 +728,6 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
             }
         }
 
-        /* Cart Section */
         .cart-section {
             background: var(--light);
             border: 1px solid var(--border);
@@ -408,7 +749,6 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
             letter-spacing: 0.5px;
         }
 
-        /* Empty Cart */
         .empty-cart {
             text-align: center;
             padding: 4rem 2rem;
@@ -433,20 +773,6 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
             max-width: 500px;
             margin-left: auto;
             margin-right: auto;
-        }
-
-        /* Cart Items */
-        .cart-item {
-            display: grid;
-            grid-template-columns: 100px 1fr auto;
-            gap: 1.5rem;
-            padding: 1.5rem;
-            border-bottom: 1px solid var(--border);
-            align-items: center;
-        }
-
-        .cart-item:last-child {
-            border-bottom: none;
         }
 
         .item-image {
@@ -550,7 +876,6 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
             gap: 0.5rem;
         }
 
-        /* Checkout Form Section */
         .checkout-section {
             background: var(--light);
             border: 1px solid var(--border);
@@ -562,7 +887,6 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
             padding: 1.5rem;
         }
 
-        /* Form Styles */
         .form-group {
             margin-bottom: 1.5rem;
         }
@@ -612,7 +936,6 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
             min-height: 100px;
         }
 
-        /* Payment Options */
         .payment-options {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -662,7 +985,6 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
             color: var(--gray);
         }
 
-        /* Order Summary */
         .order-summary {
             background: var(--light);
             border: 1px solid var(--border);
@@ -753,7 +1075,6 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
             border-top: 1px solid var(--border);
         }
 
-        /* Buttons */
         .btn {
             padding: 0.8rem 1.5rem;
             border: 1px solid var(--border);
@@ -822,7 +1143,6 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
             margin-top: 1rem;
         }
 
-        /* Cart Actions */
         .cart-actions {
             display: flex;
             justify-content: space-between;
@@ -831,7 +1151,6 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
             background: var(--gray-light);
         }
 
-        /* Messages */
         .message {
             padding: 1rem 1.5rem;
             margin-bottom: 2rem;
@@ -860,7 +1179,6 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Order Success Modal */
         .order-success-modal {
             position: fixed;
             top: 0;
@@ -953,7 +1271,6 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
             justify-content: center;
         }
 
-        /* Security Badge */
         .security-badge {
             display: flex;
             align-items: center;
@@ -974,7 +1291,6 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
             color: var(--gray);
         }
 
-        /* Guest Checkout Notice */
         .guest-notice {
             background: #fff3cd;
             border: 1px solid #ffeaa7;
@@ -991,7 +1307,6 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
             gap: 10px;
         }
 
-        /* Responsive */
         @media (max-width: 992px) {
             .shop-container {
                 padding: 1rem;
@@ -1043,38 +1358,35 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
             .modal-footer {
                 flex-direction: column;
             }
-            
+        }
+
+        @media (max-width: 576px) {
             .cart-item {
-                grid-template-columns: 1fr;
-                text-align: center;
+                grid-template-columns: 30px 1fr;
+                gap: 1rem;
+                padding: 1rem;
             }
             
             .item-image {
                 width: 100%;
-                height: 200px;
-                margin: 0 auto;
-            }
-            
-            .item-controls {
-                align-items: center;
+                height: 120px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Navigation (from main.css) -->
     <nav class="customer-nav" id="customerNav">
         <button class="mobile-menu-btn" id="mobileMenuBtn">
             <i class="fas fa-bars"></i>
         </button>
         
         <a href="shop.php" class="nav-logo">
-            <img src="../../resources/images/logo.jpeg" alt="Alas Clothing Shop" class="logo-image">
-            <span class="brand-name"></span>
+            <img src="images/logo.jpg" alt="Alas Clothing Shop" class="logo-image">
+            <span class="brand-name">Alas Clothing Shop</span>
         </a>
         
         <ul class="nav-menu" id="navMenu">
-            <li><a href="../index.php">HOME</a></li>
+            <li><a href="index.php">HOME</a></li>
             <li><a href="shop.php">SHOP</a></li>
             <li><a href="orders.php">MY ORDERS</a></li>
             <li><a href="size_chart.php">SIZE CHART</a></li>
@@ -1083,7 +1395,7 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
         </ul>
         
         <div class="nav-right">
-            <a href="<?php echo (isset($_SESSION['logged_in']) && $_SESSION['logged_in']) ? 'account.php' : 'login_register.php'; ?>" class="nav-icon" title="Account">
+            <a href="<?php echo $is_logged_in ? 'account.php' : 'login_register.php'; ?>" class="nav-icon" title="Account">
                 <i class="fas fa-user"></i>
             </a>
             <a href="wishlist.php" class="nav-icon" title="Wishlist">
@@ -1103,16 +1415,13 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
         </div>
     </nav>
 
-    <!-- Main Content -->
     <div class="main-content">
         <div class="shop-container">
-            <!-- Page Header -->
             <div class="page-header">
                 <h1><?php echo $show_checkout ? 'Checkout' : 'Shopping Cart'; ?></h1>
                 <p class="page-subtitle"><?php echo $show_checkout ? 'Complete your purchase securely' : 'Review your items and proceed to checkout'; ?></p>
             </div>
 
-            <!-- Checkout Steps (only show if cart not empty) -->
             <?php if (!empty($cart_products)): ?>
             <div class="checkout-steps">
                 <div class="steps-line"></div>
@@ -1135,7 +1444,6 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
             <?php endif; ?>
 
             <?php if (empty($cart_products) && !$checkout_success): ?>
-                <!-- Empty Cart -->
                 <div class="empty-cart">
                     <i class="fas fa-shopping-cart"></i>
                     <h3>Your cart is empty</h3>
@@ -1146,101 +1454,122 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
                 </div>
             <?php else: ?>
                 <div class="content-layout">
-                    <!-- Left Column: Cart or Checkout Form -->
                     <div class="left-column">
                         <?php if (!$show_checkout): ?>
-                            <!-- Cart Items -->
-                            <div class="cart-section">
-                                <div class="section-header">
-                                    <h2>Your Items (<?php echo $total_items; ?>)</h2>
-                                    <?php if (!empty($cart_products)): ?>
-                                        <form method="POST" style="display: inline;">
+                            <form method="POST" id="cartForm">
+                                <div class="cart-section">
+                                    <div class="selection-header">
+                                        <div class="select-all">
+                                            <label class="select-all-checkbox">
+                                                <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
+                                                <span class="checkmark"></span>
+                                                Select All
+                                            </label>
+                                        </div>
+                                        <div class="selected-count" id="selectedCount">
+                                            <?php 
+                                            $selected_count = 0;
+                                            if (!empty($_SESSION['checkout_items'])) {
+                                                $selected_count = count($_SESSION['checkout_items']);
+                                            } elseif (!empty($cart_products)) {
+                                                // If no checkout items, all are selected by default
+                                                $selected_count = count($cart_products);
+                                            }
+                                            echo $selected_count . ' selected';
+                                            ?>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="section-header">
+                                        <h2>Your Items (<?php echo count($cart_products); ?>)</h2>
+                                        <?php if (!empty($cart_products)): ?>
                                             <button type="submit" name="clear_cart" class="btn btn-danger btn-small" 
                                                     onclick="return confirm('Clear all items from cart?')">
                                                 <i class="fas fa-trash"></i> Clear Cart
                                             </button>
-                                        </form>
-                                    <?php endif; ?>
-                                </div>
-
-                                <?php foreach ($cart_products as $product): ?>
-                                <div class="cart-item" id="cart-item-<?php echo $product['id']; ?>">
-                                    <img src="<?php echo htmlspecialchars($product['image_url'] ?: '../../resources/images/product-placeholder.jpg'); ?>" 
-                                         alt="<?php echo htmlspecialchars($product['name']); ?>" 
-                                         class="item-image">
-                                    
-                                    <div class="item-details">
-                                        <h3 class="item-title"><?php echo htmlspecialchars($product['name']); ?></h3>
-                                        <div class="item-category">
-                                            <?php echo htmlspecialchars($product['category_name'] ?? 'Uncategorized'); ?>
-                                        </div>
-                                        <div class="item-price">₱<?php echo number_format($product['price'], 2); ?></div>
-                                        <div class="item-stock">
-                                            <?php if ($product['stock_quantity'] > 0): ?>
-                                                <span class="stock-available">
-                                                    <i class="fas fa-check-circle"></i>
-                                                    <?php echo $product['stock_quantity']; ?> in stock
-                                                </span>
-                                            <?php else: ?>
-                                                <span class="stock-out">
-                                                    <i class="fas fa-times-circle"></i>
-                                                    Out of stock
-                                                </span>
-                                            <?php endif; ?>
-                                        </div>
+                                        <?php endif; ?>
                                     </div>
-                                    
-                                    <div class="item-controls">
-                                        <div class="quantity-controls">
-                                            <button type="button" class="quantity-btn decrease" 
-                                                    onclick="updateQuantity(<?php echo $product['id']; ?>, -1)">-</button>
-                                            <input type="number" 
-                                                   class="quantity-input" 
-                                                   value="<?php echo $product['cart_quantity']; ?>" 
-                                                   min="1" 
-                                                   max="<?php echo $product['stock_quantity']; ?>"
-                                                   onchange="updateQuantityInput(<?php echo $product['id']; ?>, this.value)">
-                                            <button type="button" class="quantity-btn increase" 
-                                                    onclick="updateQuantity(<?php echo $product['id']; ?>, 1)">+</button>
-                                            <input type="hidden" name="update_quantity" value="1">
+
+                                    <?php foreach ($cart_products as $product): ?>
+                                    <div class="cart-item" id="cart-item-<?php echo $product['id']; ?>">
+                                        <div class="item-checkbox">
+                                            <input type="checkbox" 
+                                                   name="selected_items[]" 
+                                                   value="<?php echo $product['id']; ?>" 
+                                                   id="item-<?php echo $product['id']; ?>"
+                                                   onchange="updateSelection()"
+                                                   <?php echo $product['selected'] ? 'checked' : ''; ?>>
+                                            <span class="checkmark"></span>
                                         </div>
                                         
-                                        <div class="item-total">
-                                            ₱<?php echo number_format($product['item_total'], 2); ?>
+                                        <img src="<?php echo htmlspecialchars($product['image_url'] ?: '../../resources/images/product-placeholder.jpg'); ?>" 
+                                             alt="<?php echo htmlspecialchars($product['product_name']); ?>" 
+                                             class="item-image">
+                                        
+                                        <div class="item-details">
+                                            <h3 class="item-title"><?php echo htmlspecialchars($product['product_name']); ?></h3>
+                                            <div class="item-category">
+                                                <?php echo htmlspecialchars($product['category'] ?? 'Uncategorized'); ?>
+                                            </div>
+                                            <div class="item-price">₱<?php echo number_format($product['price'], 2); ?></div>
+                                            <div class="item-stock">
+                                                <?php if ($product['quantity'] > 0): ?>
+                                                    <span class="stock-available">
+                                                        <i class="fas fa-check-circle"></i>
+                                                        <?php echo $product['quantity']; ?> in stock
+                                                    </span>
+                                                <?php else: ?>
+                                                    <span class="stock-out">
+                                                        <i class="fas fa-times-circle"></i>
+                                                        Out of stock
+                                                    </span>
+                                                <?php endif; ?>
+                                            </div>
                                         </div>
                                         
-                                        <div class="item-actions">
-                                            <form method="POST" style="display: inline;">
-                                                <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
-                                                <button type="submit" name="move_to_wishlist" class="btn btn-secondary btn-small">
+                                        <div class="item-controls">
+                                            <div class="quantity-controls">
+                                                <button type="button" class="quantity-btn decrease" 
+                                                        onclick="updateQuantity(<?php echo $product['id']; ?>, -1)">-</button>
+                                                <input type="number" 
+                                                       class="quantity-input" 
+                                                       value="<?php echo $product['cart_quantity']; ?>" 
+                                                       min="1" 
+                                                       max="<?php echo $product['quantity']; ?>"
+                                                       onchange="updateQuantityInput(<?php echo $product['id']; ?>, this.value)">
+                                                <button type="button" class="quantity-btn increase" 
+                                                        onclick="updateQuantity(<?php echo $product['id']; ?>, 1)">+</button>
+                                            </div>
+                                            
+                                            <div class="item-total">
+                                                ₱<?php echo number_format($product['item_total'], 2); ?>
+                                            </div>
+                                            
+                                            <div class="item-actions">
+                                                <button type="submit" name="move_to_wishlist" value="<?php echo $product['id']; ?>" class="btn btn-secondary btn-small">
                                                     <i class="fas fa-heart"></i> Save
                                                 </button>
-                                            </form>
-                                            <form method="POST" style="display: inline;">
-                                                <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
-                                                <button type="submit" name="remove_item" class="btn btn-danger btn-small" 
+                                                <button type="submit" name="remove_item" value="<?php echo $product['id']; ?>" class="btn btn-danger btn-small" 
                                                         onclick="return confirm('Remove item from cart?')">
                                                     <i class="fas fa-trash"></i> Remove
                                                 </button>
-                                            </form>
+                                            </div>
                                         </div>
                                     </div>
+                                    <?php endforeach; ?>
+                                    
+                                    <div class="cart-actions">
+                                        <a href="shop.php" class="btn btn-secondary">
+                                            <i class="fas fa-arrow-left"></i> Continue Shopping
+                                        </a>
+                                        <button type="submit" name="select_for_checkout" class="btn btn-primary">
+                                            <i class="fas fa-shopping-bag"></i> Checkout Selected Items
+                                        </button>
+                                    </div>
                                 </div>
-                                <?php endforeach; ?>
-                                
-                                <div class="cart-actions">
-                                    <a href="shop.php" class="btn btn-secondary">
-                                        <i class="fas fa-arrow-left"></i> Continue Shopping
-                                    </a>
-                                    <a href="?checkout=1" class="btn btn-primary">
-                                        <i class="fas fa-lock"></i> Proceed to Checkout
-                                    </a>
-                                </div>
-                            </div>
+                            </form>
                         <?php else: ?>
-                            <!-- Checkout Form -->
                             <form method="POST" id="checkoutForm">
-                                <!-- Guest Checkout Notice -->
                                 <?php if (!$is_logged_in): ?>
                                 <div class="guest-notice">
                                     <h3><i class="fas fa-info-circle"></i> Guest Checkout</h3>
@@ -1249,7 +1578,14 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
                                 </div>
                                 <?php endif; ?>
 
-                                <!-- Shipping Information -->
+                                <?php if (!empty($_SESSION['checkout_items'])): ?>
+                                <div class="guest-notice" style="background: #e8f5e9; border-color: #a5d6a7; color: #2e7d32;">
+                                    <h3><i class="fas fa-check-circle"></i> Checking Out Selected Items</h3>
+                                    <p>You are checking out <?php echo count($_SESSION['checkout_items']); ?> selected item(s). 
+                                       <a href="cart_and_checkout.php" style="color: var(--dark); font-weight: 500;">Back to cart</a> to modify selection.</p>
+                                </div>
+                                <?php endif; ?>
+
                                 <div class="checkout-section">
                                     <div class="section-header">
                                         <h2><i class="fas fa-user"></i> Shipping Information</h2>
@@ -1259,13 +1595,13 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
                                             <div class="form-group">
                                                 <label class="form-label">Full Name <span class="required">*</span></label>
                                                 <input type="text" name="shipping_name" class="form-control" 
-                                                       value="<?php echo htmlspecialchars($user_data['name'] ?? $user_name); ?>" 
+                                                       value="<?php echo htmlspecialchars($customer_data['full_name'] ?? $user_name); ?>" 
                                                        required placeholder="Juan Dela Cruz">
                                             </div>
                                             <div class="form-group">
                                                 <label class="form-label">Phone Number <span class="required">*</span></label>
                                                 <input type="tel" name="shipping_phone" class="form-control" 
-                                                       value="<?php echo htmlspecialchars($user_data['phone'] ?? ''); ?>" 
+                                                       value="<?php echo htmlspecialchars($customer_data['contact_number'] ?? ''); ?>" 
                                                        required placeholder="09123456789">
                                             </div>
                                         </div>
@@ -1273,7 +1609,7 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
                                         <div class="form-group">
                                             <label class="form-label">Address <span class="required">*</span></label>
                                             <input type="text" name="shipping_address" class="form-control" 
-                                                   value="<?php echo htmlspecialchars($user_data['address'] ?? ''); ?>" 
+                                                   value="<?php echo htmlspecialchars($customer_data['shipping_address'] ?? ''); ?>" 
                                                    required placeholder="House #, Street, Barangay">
                                         </div>
                                         
@@ -1304,7 +1640,6 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
                                     </div>
                                 </div>
 
-                                <!-- Payment Method -->
                                 <div class="checkout-section">
                                     <div class="section-header">
                                         <h2><i class="fas fa-credit-card"></i> Payment Method</h2>
@@ -1343,17 +1678,6 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
                                                     </div>
                                                 </label>
                                             </div>
-                                            
-                                            <div class="payment-option">
-                                                <input type="radio" name="payment_method" value="credit_card" id="credit" class="payment-radio" required>
-                                                <label for="credit" class="payment-label">
-                                                    <i class="fas fa-credit-card payment-icon"></i>
-                                                    <div class="payment-info">
-                                                        <h4>Credit/Debit Card</h4>
-                                                        <p>Visa, Mastercard, or JCB</p>
-                                                    </div>
-                                                </label>
-                                            </div>
                                         </div>
                                         
                                         <div id="payment-details" style="margin-top: 1.5rem; display: none;">
@@ -1367,7 +1691,6 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
                                     </div>
                                 </div>
 
-                                <!-- Order Notes -->
                                 <div class="checkout-section">
                                     <div class="section-header">
                                         <h2><i class="fas fa-sticky-note"></i> Order Notes (Optional)</h2>
@@ -1380,7 +1703,6 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
                                     </div>
                                 </div>
 
-                                <!-- Security Badge -->
                                 <div class="security-badge">
                                     <i class="fas fa-shield-alt security-icon"></i>
                                     <div class="security-text">
@@ -1388,9 +1710,8 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
                                     </div>
                                 </div>
 
-                                <!-- Checkout Actions -->
                                 <div class="cart-actions">
-                                    <a href="?" class="btn btn-secondary">
+                                    <a href="cart_and_checkout.php" class="btn btn-secondary">
                                         <i class="fas fa-arrow-left"></i> Back to Cart
                                     </a>
                                     <button type="submit" name="place_order" class="btn btn-primary">
@@ -1401,18 +1722,21 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
                         <?php endif; ?>
                     </div>
 
-                    <!-- Right Column: Order Summary -->
                     <div class="order-summary">
                         <div class="summary-header">Order Summary</div>
                         
                         <div class="summary-items">
-                            <?php foreach ($cart_products as $product): ?>
+                            <?php 
+                            $display_products = $show_checkout && !empty($_SESSION['checkout_items']) ? $checkout_products : $cart_products;
+                            foreach ($display_products as $product): 
+                                if (!$show_checkout && !$product['selected']) continue;
+                            ?>
                             <div class="summary-item">
                                 <img src="<?php echo htmlspecialchars($product['image_url'] ?: '../../resources/images/product-placeholder.jpg'); ?>" 
-                                     alt="<?php echo htmlspecialchars($product['name']); ?>" 
+                                     alt="<?php echo htmlspecialchars($product['product_name']); ?>" 
                                      class="summary-image">
                                 <div class="summary-details">
-                                    <div class="summary-name"><?php echo htmlspecialchars($product['name']); ?></div>
+                                    <div class="summary-name"><?php echo htmlspecialchars($product['product_name']); ?></div>
                                     <div class="summary-quantity">Quantity: <?php echo $product['cart_quantity']; ?></div>
                                 </div>
                                 <div class="summary-price">₱<?php echo number_format($product['item_total'], 2); ?></div>
@@ -1422,8 +1746,8 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
                         
                         <div class="summary-totals">
                             <div class="total-row">
-                                <span class="total-label">Subtotal (<?php echo $total_items; ?> items)</span>
-                                <span class="total-value">₱<?php echo number_format($subtotal, 2); ?></span>
+                                <span class="total-label">Subtotal (<?php echo $display_items; ?> items)</span>
+                                <span class="total-value">₱<?php echo number_format($display_subtotal, 2); ?></span>
                             </div>
                             
                             <div class="total-row">
@@ -1441,10 +1765,10 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
                                 <span class="total-value">₱<?php echo number_format($total, 2); ?></span>
                             </div>
                             
-                            <?php if (!$show_checkout): ?>
-                                <a href="?checkout=1" class="btn btn-primary btn-block checkout-btn">
-                                    <i class="fas fa-lock"></i> Proceed to Checkout
-                                </a>
+                            <?php if (!$show_checkout && !empty($cart_products)): ?>
+                                <button type="submit" form="cartForm" name="select_for_checkout" class="btn btn-primary btn-block checkout-btn">
+                                    <i class="fas fa-shopping-bag"></i> Checkout Selected Items
+                                </button>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -1453,7 +1777,6 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
         </div>
     </div>
 
-    <!-- Order Success Modal -->
     <div class="order-success-modal <?php echo $checkout_success ? 'active' : ''; ?>" id="orderSuccessModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -1500,160 +1823,22 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
         </div>
     </div>
 
-    <!-- Footer (from main.css) -->
-    <footer class="footer">
-        <div class="footer-content">
-            <div class="footer-section">
-                <h3>About Us</h3>
-                <p>Alas Clothing Shop offers premium quality clothing and accessories for every occasion. We're committed to providing exceptional style and comfort.</p>
-                <div class="social-links">
-                    <a href="#"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#"><i class="fab fa-instagram"></i></a>
-                    <a href="#"><i class="fab fa-twitter"></i></a>
-                    <a href="#"><i class="fab fa-pinterest"></i></a>
-                </div>
-            </div>
-            
-            <div class="footer-section">
-                <h3>Quick Links</h3>
-                <ul class="footer-links">
-                    <li><a href="../index.php"><i class="fas fa-chevron-right"></i> Home</a></li>
-                    <li><a href="shop.php"><i class="fas fa-chevron-right"></i> Shop</a></li>
-                    <li><a href="size_chart.php"><i class="fas fa-chevron-right"></i> Size Chart</a></li>
-                    <li><a href="shipping.php"><i class="fas fa-chevron-right"></i> Shipping & Returns</a></li>
-                    <li><a href="announcements.php"><i class="fas fa-chevron-right"></i> Announcements</a></li>
-                </ul>
-            </div>
-            
-            <div class="footer-section">
-                <h3>Customer Service</h3>
-                <ul class="footer-links">
-                    <li><a href="orders.php"><i class="fas fa-chevron-right"></i> My Orders</a></li>
-                    <li><a href="account.php"><i class="fas fa-chevron-right"></i> My Account</a></li>
-                    <li><a href="wishlist.php"><i class="fas fa-chevron-right"></i> Wishlist</a></li>
-                    <li><a href="cart_and_checkout.php"><i class="fas fa-chevron-right"></i> Cart</a></li>
-                    <li><a href="#"><i class="fas fa-chevron-right"></i> Contact Us</a></li>
-                </ul>
-            </div>
-            
-            <div class="footer-section">
-                <h3>Contact Info</h3>
-                <div class="contact-info">
-                    <div class="contact-item">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>123 Fashion Street, City, Country 12345</span>
-                    </div>
-                    <div class="contact-item">
-                        <i class="fas fa-phone"></i>
-                        <span>+1 (555) 123-4567</span>
-                    </div>
-                    <div class="contact-item">
-                        <i class="fas fa-envelope"></i>
-                        <span>info@alasclothingshop.com</span>
-                    </div>
-                    <div class="contact-item">
-                        <i class="fas fa-clock"></i>
-                        <span>Mon-Fri: 9AM-6PM | Sat: 10AM-4PM</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="footer-bottom">
-            <p>&copy; <?php echo date('Y'); ?> Alas Clothing Shop. All rights reserved.</p>
-            <p>Designed with <i class="fas fa-heart" style="color: #ff3b30;"></i> for fashion enthusiasts</p>
-        </div>
-    </footer>
-
-    <script src="js/main.js"></script>
     <script>
-        // Cart and Checkout specific JavaScript
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize navbar using global function from main.js
-            if (typeof window.navbar !== 'undefined') {
-                window.navbar.init();
-                window.navbar.highlightActivePage();
-            }
-            
-            // Update cart count using global functions from main.js
-            const cartCount = <?php echo isset($_SESSION['cart']) ? count($_SESSION['cart']) : 0; ?>;
-            const wishlistCount = <?php echo isset($_SESSION['wishlist']) ? count($_SESSION['wishlist']) : 0; ?>;
-            
-            if (typeof window.cart !== 'undefined') {
-                window.cart.updateCount(cartCount);
-                window.cart.updateWishlistCount(wishlistCount);
-            }
-            
-            // Initialize payment method selection
-            initPaymentMethods();
-            
-            // Initialize quantity controls
-            initQuantityControls();
-            
-            // If order was successful, show modal
-            <?php if ($checkout_success): ?>
-                const modal = document.getElementById('orderSuccessModal');
-                if (modal) {
-                    modal.classList.add('active');
-                    
-                    // Prevent closing modal by clicking outside
-                    modal.addEventListener('click', function(e) {
-                        if (e.target === this) {
-                            e.stopPropagation();
-                        }
-                    });
-                }
-            <?php endif; ?>
-        });
-
-        // Payment method selection
-        function initPaymentMethods() {
-            const paymentRadios = document.querySelectorAll('.payment-radio');
-            const paymentDetails = document.getElementById('payment-details');
-            const paymentInstructions = document.getElementById('payment-instructions');
-            
-            const paymentInstructionsMap = {
-                'cod': 'Pay with cash when your order arrives. Our delivery rider will collect the payment.',
-                'gcash': 'Send payment to GCash number 0917-123-4567. Use your order number as reference.',
-                'bank_transfer': 'Transfer payment to BPI Account #1234-5678-90. Send proof of payment to our email.',
-                'credit_card': 'You will be redirected to our secure payment gateway to enter your card details.'
-            };
-            
-            paymentRadios.forEach(radio => {
-                radio.addEventListener('change', function() {
-                    if (this.checked) {
-                        paymentDetails.style.display = 'block';
-                        paymentInstructions.textContent = paymentInstructionsMap[this.value] || 'Select a payment method to see instructions.';
-                    }
-                });
+        function toggleSelectAll(checkbox) {
+            const checkboxes = document.querySelectorAll('input[name="selected_items[]"]');
+            checkboxes.forEach(cb => {
+                cb.checked = checkbox.checked;
             });
-            
-            // Set default payment instructions
-            const defaultPayment = document.querySelector('.payment-radio:checked');
-            if (defaultPayment && paymentDetails && paymentInstructions) {
-                paymentDetails.style.display = 'block';
-                paymentInstructions.textContent = paymentInstructionsMap[defaultPayment.value] || 'Select a payment method to see instructions.';
-            }
+            updateSelection();
         }
 
-        // Quantity Controls
-        function initQuantityControls() {
-            // Add event listeners to quantity buttons
-            document.querySelectorAll('.quantity-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const productId = this.getAttribute('onclick').match(/\d+/)[0];
-                    const change = this.classList.contains('increase') ? 1 : -1;
-                    updateQuantity(productId, change);
-                });
-            });
-
-            // Add event listeners to quantity inputs
-            document.querySelectorAll('.quantity-input').forEach(input => {
-                input.addEventListener('change', function() {
-                    const productId = this.getAttribute('onchange').match(/\d+/)[0];
-                    updateQuantityInput(productId, this.value);
-                });
-            });
+        function updateSelection() {
+            const checkboxes = document.querySelectorAll('input[name="selected_items[]"]:checked');
+            document.getElementById('selectedCount').textContent = checkboxes.length + ' selected';
+            
+            const selectAll = document.getElementById('selectAll');
+            const allCheckboxes = document.querySelectorAll('input[name="selected_items[]"]');
+            selectAll.checked = checkboxes.length === allCheckboxes.length;
         }
 
         function updateQuantity(productId, change) {
@@ -1696,88 +1881,66 @@ $show_checkout = isset($_GET['checkout']) || isset($_POST['place_order']);
             form.submit();
         }
 
-        // Form validation
-        const checkoutForm = document.getElementById('checkoutForm');
-        if (checkoutForm) {
-            checkoutForm.addEventListener('submit', function(e) {
-                // Basic validation
-                const requiredFields = checkoutForm.querySelectorAll('[required]');
-                let isValid = true;
-                
-                requiredFields.forEach(field => {
-                    if (!field.value.trim()) {
-                        isValid = false;
-                        field.style.borderColor = 'var(--danger)';
-                        
-                        // Remove error styling on input
-                        field.addEventListener('input', function() {
-                            this.style.borderColor = 'var(--border)';
-                        });
+        function initPaymentMethods() {
+            const paymentRadios = document.querySelectorAll('.payment-radio');
+            const paymentDetails = document.getElementById('payment-details');
+            const paymentInstructions = document.getElementById('payment-instructions');
+            
+            const paymentInstructionsMap = {
+                'cod': 'Pay with cash when your order arrives. Our delivery rider will collect the payment.',
+                'gcash': 'Send payment to GCash number 0917-123-4567. Use your order number as reference.',
+                'bank_transfer': 'Transfer payment to BPI Account #1234-5678-90. Send proof of payment to our email.'
+            };
+            
+            paymentRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.checked) {
+                        paymentDetails.style.display = 'block';
+                        paymentInstructions.textContent = paymentInstructionsMap[this.value] || 'Select a payment method to see instructions.';
                     }
                 });
-                
-                if (!isValid) {
-                    e.preventDefault();
-                    // Use global notification function if available
-                    if (typeof window.utils !== 'undefined' && window.utils.showNotification) {
-                        window.utils.showNotification('Please fill in all required fields marked with *.', 'error');
-                    } else {
+            });
+            
+            const defaultPayment = document.querySelector('.payment-radio:checked');
+            if (defaultPayment && paymentDetails && paymentInstructions) {
+                paymentDetails.style.display = 'block';
+                paymentInstructions.textContent = paymentInstructionsMap[defaultPayment.value] || 'Select a payment method to see instructions.';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSelection();
+            initPaymentMethods();
+            
+            <?php if ($checkout_success): ?>
+                const modal = document.getElementById('orderSuccessModal');
+                if (modal) modal.classList.add('active');
+            <?php endif; ?>
+            
+            const checkoutForm = document.getElementById('checkoutForm');
+            if (checkoutForm) {
+                checkoutForm.addEventListener('submit', function(e) {
+                    const requiredFields = checkoutForm.querySelectorAll('[required]');
+                    let isValid = true;
+                    
+                    requiredFields.forEach(field => {
+                        if (!field.value.trim()) {
+                            isValid = false;
+                            field.style.borderColor = 'var(--danger)';
+                            
+                            field.addEventListener('input', function() {
+                                this.style.borderColor = 'var(--border)';
+                            });
+                        }
+                    });
+                    
+                    if (!isValid) {
+                        e.preventDefault();
                         alert('Please fill in all required fields marked with *.');
                     }
-                } else {
-                    // Show loading state
-                    const submitBtn = checkoutForm.querySelector('button[type="submit"]');
-                    const originalHtml = submitBtn.innerHTML;
-                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-                    submitBtn.disabled = true;
-                    
-                    // Re-enable button if form submission fails
-                    setTimeout(() => {
-                        submitBtn.innerHTML = originalHtml;
-                        submitBtn.disabled = false;
-                    }, 5000);
-                }
-            });
-        }
-
-        // Auto-format phone number
-        const phoneInput = document.querySelector('input[name="shipping_phone"]');
-        if (phoneInput) {
-            phoneInput.addEventListener('input', function(e) {
-                let value = e.target.value.replace(/\D/g, '');
-                if (value.length > 0) {
-                    value = value.substring(0, 11);
-                    if (value.length <= 3) {
-                        value = value;
-                    } else if (value.length <= 7) {
-                        value = value.substring(0, 4) + '-' + value.substring(4);
-                    } else {
-                        value = value.substring(0, 4) + '-' + value.substring(4, 7) + '-' + value.substring(7);
-                    }
-                }
-                e.target.value = value;
-            });
-        }
-
-        // Province selection auto-fill for Cebu
-        const provinceSelect = document.querySelector('select[name="shipping_province"]');
-        const cityInput = document.querySelector('input[name="shipping_city"]');
-        const zipInput = document.querySelector('input[name="shipping_zip"]');
-        
-        if (provinceSelect && cityInput && zipInput) {
-            provinceSelect.addEventListener('change', function() {
-                if (this.value === 'Cebu') {
-                    cityInput.value = 'Cebu City';
-                    zipInput.value = '6000';
-                } else if (this.value === 'Metro Manila') {
-                    cityInput.value = 'Manila';
-                    zipInput.value = '1000';
-                } else {
-                    cityInput.value = '';
-                    zipInput.value = '';
-                }
-            });
-        }
+                });
+            }
+        });
     </script>
 </body>
 </html>

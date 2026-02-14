@@ -7,9 +7,9 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true || $_SESSI
     exit;
 }
 
-// Database connection
+// Database connection - FIXED DATABASE NAME
 $host = 'localhost';
-$dbname = 'clothing_shop';
+$dbname = 'clothing_management_system'; // Changed from 'clothing_shop'
 $username = 'root';
 $password = '';
 
@@ -20,57 +20,69 @@ try {
     die("Database connection failed: " . $e->getMessage());
 }
 
-// Get user data - FIXED: Include password field
-$user_id = $_SESSION['user_id'];
-$stmt = $pdo->prepare("SELECT id, name as full_name, email, phone, address, created_at, password FROM users WHERE id = ?");
-$stmt->execute([$user_id]);
-$user = $stmt->fetch(PDO::FETCH_ASSOC);
+// Get user data - FIXED: Querying the correct customers table
+$customer_id = $_SESSION['user_id']; // Assuming this stores customer ID
+$stmt = $pdo->prepare("SELECT id, first_name, last_name, email, contact_number as phone, shipping_address as address, created_at, password FROM customers WHERE id = ?");
+$stmt->execute([$customer_id]);
+$customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
-// Get user stats
-$orders_stmt = $pdo->prepare("SELECT COUNT(*) as total_orders FROM orders WHERE user_id = ?");
-$orders_stmt->execute([$user_id]);
+if (!$customer) {
+    // Customer not found, log out
+    session_destroy();
+    header('Location: login_register.php');
+    exit;
+}
+
+// Combine first and last name
+$customer['full_name'] = $customer['first_name'] . ' ' . $customer['last_name'];
+
+// Get customer stats - FIXED: Using customer_id instead of user_id
+$orders_stmt = $pdo->prepare("SELECT COUNT(*) as total_orders FROM orders WHERE customer_id = ?");
+$orders_stmt->execute([$customer_id]);
 $total_orders = $orders_stmt->fetchColumn();
 
 // Handle profile update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
-    $full_name = trim($_POST['full_name']);
+    $first_name = trim($_POST['first_name']);
+    $last_name = trim($_POST['last_name']);
     $email = trim($_POST['email']);
     $phone = trim($_POST['phone']);
     $address = trim($_POST['address']);
     
-    // Check if email is already taken by another user
-    $check_stmt = $pdo->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
-    $check_stmt->execute([$email, $user_id]);
+    // Check if email is already taken by another customer
+    $check_stmt = $pdo->prepare("SELECT id FROM customers WHERE email = ? AND id != ?");
+    $check_stmt->execute([$email, $customer_id]);
     
     if ($check_stmt->fetch()) {
         $error_message = "Email is already taken by another user.";
     } else {
-        // Update user profile
-        $update_stmt = $pdo->prepare("UPDATE users SET name = ?, email = ?, phone = ?, address = ? WHERE id = ?");
-        $update_stmt->execute([$full_name, $email, $phone, $address, $user_id]);
+        // Update customer profile
+        $update_stmt = $pdo->prepare("UPDATE customers SET first_name = ?, last_name = ?, email = ?, contact_number = ?, shipping_address = ? WHERE id = ?");
+        $update_stmt->execute([$first_name, $last_name, $email, $phone, $address, $customer_id]);
         
         // Update session data
-        $_SESSION['user_name'] = $full_name;
+        $_SESSION['user_name'] = $first_name . ' ' . $last_name;
         $_SESSION['user_email'] = $email;
         $_SESSION['user_phone'] = $phone;
         $_SESSION['user_address'] = $address;
         
         $success_message = "Profile updated successfully!";
         
-        // Refresh user data
-        $stmt->execute([$user_id]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        // Refresh customer data
+        $stmt->execute([$customer_id]);
+        $customer = $stmt->fetch(PDO::FETCH_ASSOC);
+        $customer['full_name'] = $customer['first_name'] . ' ' . $customer['last_name'];
     }
 }
 
-// Handle password change - FIXED: Now works correctly
+// Handle password change
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
     $current_password = $_POST['current_password'];
     $new_password = $_POST['new_password'];
     $confirm_password = $_POST['confirm_password'];
     
-    // Verify current password - FIXED: Now $user has password field
-    if (!password_verify($current_password, $user['password'])) {
+    // Verify current password
+    if (!password_verify($current_password, $customer['password'])) {
         $error_message = "Current password is incorrect.";
     } elseif ($new_password !== $confirm_password) {
         $error_message = "New passwords do not match.";
@@ -79,11 +91,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
     } else {
         // Update password
         $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-        $update_stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
-        $update_stmt->execute([$hashed_password, $user_id]);
+        $update_stmt = $pdo->prepare("UPDATE customers SET password = ? WHERE id = ?");
+        $update_stmt->execute([$hashed_password, $customer_id]);
         
-        // Update the local user array with new password
-        $user['password'] = $hashed_password;
+        // Update the local customer array with new password
+        $customer['password'] = $hashed_password;
         
         $success_message = "Password changed successfully!";
     }
@@ -293,7 +305,7 @@ if (isset($_GET['logout'])) {
             color: var(--dark);
         }
 
-        /* Logout Button in Sidebar - Made same size as other menu items */
+        /* Logout Button in Sidebar */
         .logout-item {
             display: flex;
             align-items: center;
@@ -462,57 +474,6 @@ if (isset($_GET['logout'])) {
             border-color: var(--primary-dark);
         }
 
-        .btn-secondary {
-            background: var(--light);
-            color: var(--dark);
-            border-color: var(--border);
-        }
-
-        .btn-secondary:hover {
-            background: var(--dark);
-            color: var(--light);
-            border-color: var(--dark);
-        }
-
-        .btn-danger {
-            background: var(--light);
-            color: var(--danger);
-            border-color: var(--danger);
-        }
-
-        .btn-danger:hover {
-            background: var(--danger);
-            color: var(--light);
-        }
-
-        /* Address Display */
-        .address-display {
-            background: var(--gray-light);
-            padding: 1.5rem;
-            border: 1px solid var(--border);
-            margin-top: 0.5rem;
-        }
-
-        .address-display p {
-            margin: 0;
-            color: var(--dark);
-            line-height: 1.6;
-        }
-
-        .phone-info {
-            margin-top: 0.5rem;
-            color: var(--gray);
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        /* Danger Zone - Removed since logout is in sidebar now */
-        .danger-zone {
-            display: none;
-        }
-
         /* Responsive */
         @media (max-width: 992px) {
             .account-container {
@@ -584,12 +545,12 @@ if (isset($_GET['logout'])) {
         </button>
         
         <a href="shop.php" class="nav-logo">
-            <img src="../../resources/images/logo.jpeg" alt="Alas Clothing Shop" class="logo-image">
+            <img src="images/logo.jpg" alt="Alas Clothing Shop" class="logo-image">
             <span class="brand-name"></span>
         </a>
         
         <ul class="nav-menu" id="navMenu">
-            <li><a href="../index.php">HOME</a></li>
+            <li><a href="index.php">HOME</a></li>
             <li><a href="shop.php">SHOP</a></li>
             <li><a href="orders.php">MY ORDERS</a></li>
             <li><a href="size_chart.php">SIZE CHART</a></li>
@@ -646,10 +607,10 @@ if (isset($_GET['logout'])) {
                 <div class="account-sidebar">
                     <div class="user-profile">
                         <div class="profile-avatar">
-                            <?php echo strtoupper(substr($user['full_name'] ?? $user_name, 0, 1)); ?>
+                            <?php echo strtoupper(substr($customer['first_name'] ?? '', 0, 1)); ?>
                         </div>
-                        <div class="profile-name"><?php echo htmlspecialchars($user['full_name'] ?? $user_name); ?></div>
-                        <div class="profile-email"><?php echo htmlspecialchars($user['email'] ?? ''); ?></div>
+                        <div class="profile-name"><?php echo htmlspecialchars($customer['full_name'] ?? $user_name); ?></div>
+                        <div class="profile-email"><?php echo htmlspecialchars($customer['email'] ?? ''); ?></div>
                     </div>
 
                     <div class="account-stats">
@@ -660,7 +621,7 @@ if (isset($_GET['logout'])) {
                         <div class="stat-item">
                             <span class="stat-label">Member Since</span>
                             <span class="stat-value">
-                                <?php echo date('M Y', strtotime($user['created_at'] ?? 'now')); ?>
+                                <?php echo date('M Y', strtotime($customer['created_at'] ?? 'now')); ?>
                             </span>
                         </div>
                     </div>
@@ -683,7 +644,7 @@ if (isset($_GET['logout'])) {
                             <span>My Orders</span>
                         </a>
                         
-                        <!-- Logout Button - Same size as other menu items -->
+                        <!-- Logout Button -->
                         <button class="logout-item" onclick="confirmLogout()">
                             <i class="fas fa-sign-out-alt"></i>
                             <span>Logout</span>
@@ -703,43 +664,43 @@ if (isset($_GET['logout'])) {
                         <form method="POST">
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="full_name">Full Name</label>
-                                    <input type="text" id="full_name" name="full_name" class="form-control" 
-                                           value="<?php echo htmlspecialchars($user['full_name'] ?? $user_name); ?>" required>
+                                    <label for="first_name">First Name</label>
+                                    <input type="text" id="first_name" name="first_name" class="form-control" 
+                                           value="<?php echo htmlspecialchars($customer['first_name'] ?? ''); ?>" required>
                                 </div>
                                 
                                 <div class="form-group">
-                                    <label for="email">Email Address</label>
-                                    <input type="email" id="email" name="email" class="form-control" 
-                                           value="<?php echo htmlspecialchars($user['email'] ?? ''); ?>" required>
+                                    <label for="last_name">Last Name</label>
+                                    <input type="text" id="last_name" name="last_name" class="form-control" 
+                                           value="<?php echo htmlspecialchars($customer['last_name'] ?? ''); ?>" required>
                                 </div>
                             </div>
 
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="phone">Phone Number</label>
-                                    <input type="tel" id="phone" name="phone" class="form-control" 
-                                           value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>" 
-                                           placeholder="09123456789">
+                                    <label for="email">Email Address</label>
+                                    <input type="email" id="email" name="email" class="form-control" 
+                                           value="<?php echo htmlspecialchars($customer['email'] ?? ''); ?>" required>
                                 </div>
                                 
                                 <div class="form-group">
-                                    <label for="account_type">Account Type</label>
-                                    <input type="text" id="account_type" class="form-control" 
-                                           value="Customer" disabled>
+                                    <label for="phone">Phone Number</label>
+                                    <input type="tel" id="phone" name="phone" class="form-control" 
+                                           value="<?php echo htmlspecialchars($customer['phone'] ?? ''); ?>" 
+                                           placeholder="09123456789">
                                 </div>
                             </div>
 
                             <div class="form-group">
                                 <label for="address">Shipping Address</label>
                                 <textarea id="address" name="address" class="form-control" 
-                                          rows="4" placeholder="House #, Street, Barangay, City, Province"><?php echo htmlspecialchars($user['address'] ?? ''); ?></textarea>
+                                          rows="4" placeholder="House #, Street, Barangay, City, Province"><?php echo htmlspecialchars($customer['address'] ?? ''); ?></textarea>
                             </div>
 
                             <div class="form-group">
                                 <label for="created_at">Member Since</label>
                                 <input type="text" id="created_at" class="form-control" 
-                                       value="<?php echo date('F d, Y', strtotime($user['created_at'] ?? 'now')); ?>" 
+                                       value="<?php echo date('F d, Y', strtotime($customer['created_at'] ?? 'now')); ?>" 
                                        disabled>
                             </div>
 
@@ -798,15 +759,16 @@ if (isset($_GET['logout'])) {
                         <div class="form-group">
                             <label>Default Shipping Address</label>
                             <div class="address-display">
-                                <?php if (!empty($user['address'])): ?>
-                                    <p><?php echo htmlspecialchars($user['address']); ?></p>
+                                <?php if (!empty($customer['address'])): ?>
+                                    <p><?php echo htmlspecialchars($customer['address']); ?></p>
                                     <div class="phone-info">
                                         <i class="fas fa-phone"></i>
-                                        <span><?php echo htmlspecialchars($user['phone'] ?? 'Not provided'); ?></span>
+                                        <span><?php echo htmlspecialchars($customer['phone'] ?? 'Not provided'); ?></span>
                                     </div>
                                 <?php else: ?>
                                     <p style="color: var(--gray); font-style: italic;">No shipping address saved</p>
                                 <?php endif; ?>
+                            </div>
                         </div>
 
                         <p style="color: var(--gray); font-size: 0.9rem; margin-top: 2rem; padding: 1rem; background: var(--gray-light);">
@@ -836,7 +798,7 @@ if (isset($_GET['logout'])) {
             <div class="footer-section">
                 <h3>Quick Links</h3>
                 <ul class="footer-links">
-                    <li><a href="../index.php"><i class="fas fa-chevron-right"></i> Home</a></li>
+                    <li><a href="index.php"><i class="fas fa-chevron-right"></i> Home</a></li>
                     <li><a href="shop.php"><i class="fas fa-chevron-right"></i> Shop</a></li>
                     <li><a href="size_chart.php"><i class="fas fa-chevron-right"></i> Size Chart</a></li>
                     <li><a href="shipping.php"><i class="fas fa-chevron-right"></i> Shipping & Returns</a></li>
@@ -884,24 +846,17 @@ if (isset($_GET['logout'])) {
         </div>
     </footer>
 
-    <script src="js/main.js"></script>
     <script>
         // Account-specific JavaScript
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize navbar using global function from main.js
-            if (typeof window.navbar !== 'undefined') {
-                window.navbar.init();
-                window.navbar.highlightActivePage();
-            }
-            
-            // Update cart and wishlist counts using global functions from main.js
-            const cartCount = <?php echo isset($_SESSION['cart']) ? count($_SESSION['cart']) : 0; ?>;
-            const wishlistCount = <?php echo isset($_SESSION['wishlist']) ? count($_SESSION['wishlist']) : 0; ?>;
-            
-            if (typeof window.cart !== 'undefined') {
-                window.cart.updateCount(cartCount);
-                window.cart.updateWishlistCount(wishlistCount);
-            }
+            // Highlight active page
+            const currentPage = window.location.pathname.split('/').pop();
+            const navLinks = document.querySelectorAll('.nav-menu a');
+            navLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPage) {
+                    link.classList.add('active');
+                }
+            });
         });
 
         // Show/Hide Content Sections
@@ -994,10 +949,13 @@ if (isset($_GET['logout'])) {
         }
 
         // Form validation for password change
-        const passwordForms = document.querySelectorAll('form');
-        passwordForms.forEach(form => {
-            if (form.querySelector('input[name="change_password"]')) {
-                form.addEventListener('submit', function(e) {
+        const passwordForm = document.querySelector('form[method="POST"]');
+        if (passwordForm) {
+            passwordForm.addEventListener('submit', function(e) {
+                const changePasswordBtn = this.querySelector('button[name="change_password"]');
+                if (!changePasswordBtn) return;
+                
+                if (e.submitter === changePasswordBtn) {
                     const password = document.getElementById('new_password')?.value;
                     const confirmPassword = document.getElementById('confirm_password')?.value;
                     
@@ -1005,32 +963,43 @@ if (isset($_GET['logout'])) {
                     
                     if (password.length < 6) {
                         e.preventDefault();
-                        if (typeof window.utils !== 'undefined' && window.utils.showNotification) {
-                            window.utils.showNotification('Password must be at least 6 characters long.', 'error');
-                        } else {
-                            alert('Password must be at least 6 characters long.');
-                        }
+                        alert('Password must be at least 6 characters long.');
                         return false;
                     }
                     
                     if (password !== confirmPassword) {
                         e.preventDefault();
-                        if (typeof window.utils !== 'undefined' && window.utils.showNotification) {
-                            window.utils.showNotification('Passwords do not match.', 'error');
-                        } else {
-                            alert('Passwords do not match.');
-                        }
+                        alert('Passwords do not match.');
                         return false;
                     }
-                });
-            }
-        });
+                }
+            });
+        }
 
         // Logout confirmation
         function confirmLogout() {
             if (confirm('Are you sure you want to logout?')) {
                 window.location.href = '?logout=true';
             }
+        }
+
+        // Mobile menu toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const navMenu = document.getElementById('navMenu');
+        
+        if (mobileMenuBtn && navMenu) {
+            mobileMenuBtn.addEventListener('click', function() {
+                navMenu.classList.toggle('show');
+                this.classList.toggle('active');
+            });
+            
+            // Close menu when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!mobileMenuBtn.contains(event.target) && !navMenu.contains(event.target)) {
+                    navMenu.classList.remove('show');
+                    mobileMenuBtn.classList.remove('active');
+                }
+            });
         }
     </script>
 </body>
