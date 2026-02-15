@@ -119,7 +119,7 @@ $defaultCms = [
         'subtitle' => 'PREMIUM CLOTHING COLLECTION',
         'description' => 'Discover exquisite craftsmanship and premium fabrics in every piece. From casual essentials to statement pieces, we bring you fashion that lasts beyond seasons.',
         'button1_text' => 'Shop Collection',
-        'button1_link' => '/Public/shop.php',
+        'button1_link' => './Public/shop.php',
         'button2_text' => 'New Arrivals',
         'button2_link' => '#new-arrivals'
     ],
@@ -171,7 +171,7 @@ function getCmsContent($section, $field, $default = '') {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
     
     <!-- Your CSS File -->
-    <link rel="stylesheet" href="/Public/css/main.css">
+    <link rel="stylesheet" href="./Public/css/main.css">
     <style>
         /* ===== HOME PAGE SPECIFIC STYLES ===== */
         :root {
@@ -863,19 +863,19 @@ function getCmsContent($section, $field, $default = '') {
         <!-- Mobile Menu -->
         <ul class="nav-menu" id="navMenu">
             <li><a href="index.php" class="active">HOME</a></li>
-            <li><a href="/Public/shop.php">SHOP</a></li>
-            <li><a href="/Public/orders.php">MY ORDERS</a></li>
-            <li><a href="/Public/size_chart.php">SIZE CHART</a></li>
-            <li><a href="/Public/shipping.php">SHIPPING</a></li>
-            <li><a href="/Public/announcements.php">ANNOUNCEMENTS</a></li>
+            <li><a href="./Public/shop.php">SHOP</a></li>
+            <li><a href="./Public/orders.php">MY ORDERS</a></li>
+            <li><a href="./Public/size_chart.php">SIZE CHART</a></li>
+            <li><a href="./Public/shipping.php">SHIPPING</a></li>
+            <li><a href="./Public/announcements.php">ANNOUNCEMENTS</a></li>
         </ul>
         
         <div class="nav-right">
             <!-- Icons -->
-            <a href="<?php echo (isset($_SESSION['logged_in']) && $_SESSION['logged_in']) ? '/Public/account.php' : '/Public/login_register.php'; ?>" class="nav-icon" title="Account">
+            <a href="<?php echo (isset($_SESSION['logged_in']) && $_SESSION['logged_in']) ? './Public/account.php' : './Public/login_register.php'; ?>" class="nav-icon" title="Account">
                 <i class="fas fa-user"></i>
             </a>
-            <a href="/Public/wishlist.php" class="nav-icon" title="Wishlist">
+            <a href="./Public/wishlist.php" class="nav-icon" title="Wishlist">
                 <i class="fas fa-heart"></i>
                 <?php if (!empty($_SESSION['wishlist'])): ?>
                     <span class="wishlist-count-badge" id="wishlistCount">
@@ -883,7 +883,7 @@ function getCmsContent($section, $field, $default = '') {
                     </span>
                 <?php endif; ?>
             </a>
-            <a href="/Public/cart_and_checkout.php" class="nav-icon" title="Cart">
+            <a href="./Public/cart_and_checkout.php" class="nav-icon" title="Cart">
                 <i class="fas fa-shopping-cart"></i>
                 <span class="cart-count-badge" id="cartCount">
                     <?php echo isset($_SESSION['cart']) ? count($_SESSION['cart']) : 0; ?>
@@ -931,7 +931,7 @@ function getCmsContent($section, $field, $default = '') {
             </div>
             
             <div class="hero-buttons">
-                <a href="<?php echo getCmsContent('hero', 'button1_link', '/Public/shop.php'); ?>" class="btn-hero">
+                <a href="<?php echo getCmsContent('hero', 'button1_link', './Public/shop.php'); ?>" class="btn-hero">
                     <i class="fas fa-shopping-bag"></i>
                     <?php echo getCmsContent('hero', 'button1_text'); ?>
                 </a>
@@ -1071,7 +1071,7 @@ function getCmsContent($section, $field, $default = '') {
                                 
                                 <div class="product-price">₱<?php echo number_format($product['price'], 2); ?></div>
                                 <div class="product-actions">
-                                    <a href="/Public/shop.php?search=<?php echo urlencode($product['product_name']); ?>" class="btn-product">
+                                    <a href="./Public/shop.php?search=<?php echo urlencode($product['product_name']); ?>" class="btn-product">
                                         View Details
                                     </a>
                                     <button class="btn-product primary" onclick="addToCartFromHome(<?php echo $product['id']; ?>)">
@@ -1090,7 +1090,7 @@ function getCmsContent($section, $field, $default = '') {
         </div>
         
         <div class="view-all">
-            <a href="/Public/shop.php" class="btn-hero btn-hero-outline" style="background: var(--dark); color: var(--light);">
+            <a href="./Public/shop.php" class="btn-hero btn-hero-outline" style="background: var(--dark); color: var(--light);">
                 <i class="fas fa-store"></i>
                 View All Products
             </a>
@@ -1125,7 +1125,7 @@ function getCmsContent($section, $field, $default = '') {
                 <div class="category-overlay">
                     <div class="category-content">
                         <h3 class="category-title"><?php echo htmlspecialchars($category); ?></h3>
-                        <a href="/Public/shop.php?category=<?php echo urlencode($category); ?>" class="category-cta">
+                        <a href="./Public/shop.php?category=<?php echo urlencode($category); ?>" class="category-cta">
                             Shop Now <i class="fas fa-arrow-right"></i>
                         </a>
                     </div>
@@ -1167,7 +1167,7 @@ function getCmsContent($section, $field, $default = '') {
                     </p>
                     <div class="product-price">₱<?php echo number_format($product['price'], 2); ?></div>
                     <div class="product-actions">
-                        <a href="/Public/shop.php?search=<?php echo urlencode($product['product_name']); ?>" class="btn-product">
+                        <a href="./Public/shop.php?search=<?php echo urlencode($product['product_name']); ?>" class="btn-product">
                             View Details
                         </a>
                         <button class="btn-product primary" onclick="addToCartFromHome(<?php echo $product['id']; ?>)">
@@ -1187,7 +1187,7 @@ function getCmsContent($section, $field, $default = '') {
         <?php endif; ?>
         
         <div class="view-all">
-            <a href="/Public/shop.php" class="btn-hero btn-hero-outline" style="background: var(--dark); color: var(--light);">
+            <a href="./Public/shop.php" class="btn-hero btn-hero-outline" style="background: var(--dark); color: var(--light);">
                 <i class="fas fa-store"></i>
                 View All Products
             </a>
@@ -1224,20 +1224,20 @@ function getCmsContent($section, $field, $default = '') {
                 <h3>Quick Links</h3>
                 <ul class="footer-links">
                     <li><a href="index.php"><i class="fas fa-chevron-right"></i> Home</a></li>
-                    <li><a href="/Public/shop.php"><i class="fas fa-chevron-right"></i> Shop</a></li>
-                    <li><a href="/Public/size_chart.php"><i class="fas fa-chevron-right"></i> Size Chart</a></li>
-                    <li><a href="/Public/shipping.php"><i class="fas fa-chevron-right"></i> Shipping & Returns</a></li>
-                    <li><a href="/Public/announcements.php"><i class="fas fa-chevron-right"></i> Announcements</a></li>
+                    <li><a href="./Public/shop.php"><i class="fas fa-chevron-right"></i> Shop</a></li>
+                    <li><a href="./Public/size_chart.php"><i class="fas fa-chevron-right"></i> Size Chart</a></li>
+                    <li><a href="./Public/shipping.php"><i class="fas fa-chevron-right"></i> Shipping & Returns</a></li>
+                    <li><a href="./Public/announcements.php"><i class="fas fa-chevron-right"></i> Announcements</a></li>
                 </ul>
             </div>
             
             <div class="footer-section">
                 <h3>Customer Service</h3>
                 <ul class="footer-links">
-                    <li><a href="/Public/orders.php"><i class="fas fa-chevron-right"></i> My Orders</a></li>
-                    <li><a href="/Public/account.php"><i class="fas fa-chevron-right"></i> My Account</a></li>
-                    <li><a href="/Public/wishlist.php"><i class="fas fa-chevron-right"></i> Wishlist</a></li>
-                    <li><a href="/Public/cart_and_checkout.php"><i class="fas fa-chevron-right"></i> Cart</a></li>
+                    <li><a href="./Public/orders.php"><i class="fas fa-chevron-right"></i> My Orders</a></li>
+                    <li><a href="./Public/account.php"><i class="fas fa-chevron-right"></i> My Account</a></li>
+                    <li><a href="./Public/wishlist.php"><i class="fas fa-chevron-right"></i> Wishlist</a></li>
+                    <li><a href="./Public/cart_and_checkout.php"><i class="fas fa-chevron-right"></i> Cart</a></li>
                     <li><a href="#"><i class="fas fa-chevron-right"></i> Contact Us</a></li>
                 </ul>
             </div>
@@ -1272,7 +1272,7 @@ function getCmsContent($section, $field, $default = '') {
     </footer>
 
     <!-- ========== JAVASCRIPT ========== -->
-    <script src="/Public/js/main.js"></script>
+    <script src="./Public/js/main.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -1381,7 +1381,7 @@ function getCmsContent($section, $field, $default = '') {
                     formData.append('product_id', productId);
                     formData.append('quantity', 1);
                     
-                    const response = await fetch('/Public/shop.php', {
+                    const response = await fetch('./Public/shop.php', {
                         method: 'POST',
                         headers: {
                             'X-Requested-With': 'XMLHttpRequest'
