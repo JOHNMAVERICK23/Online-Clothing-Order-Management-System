@@ -3,7 +3,7 @@ session_start();
 
 // Database connection
 $host = 'localhost';
-$dbname = 'clothing_shop';
+$dbname = 'clothing_management_system';
 $username = 'root';
 $password = '';
 

@@ -10,7 +10,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true || $_SESSI
 
 // Database connection
 $host = 'localhost';
-$dbname = 'clothing_shop';
+$dbname = 'clothing_management_system';
 $username = 'root';
 $password = '';
 

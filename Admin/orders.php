@@ -312,5 +312,28 @@ if ($result->num_rows > 0) {
             window.print();
         }
     </script>
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadOrderStats();
+});
+
+function loadOrderStats() {
+    fetch('../PROCESS/getOrderStats.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('totalOrders').textContent = data.total_orders;
+                document.getElementById('pendingOrders').textContent = data.pending_orders;
+                document.getElementById('shippedOrders').textContent = data.shipped_orders;
+                document.getElementById('deliveredOrders').textContent = data.delivered_orders;
+            } else {
+                console.error('Failed to load order stats');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading order stats:', error);
+        });
+}
+</script>
 </body>
 </html>

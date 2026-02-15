@@ -159,5 +159,35 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../JS/toast.js"></script>
     <script src="../JS/dashboard.js"></script>
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadOrderStats();
+});
+
+function loadOrderStats() {
+    fetch('../PROCESS/getOrderStats.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Total Orders (gamit ang totalUsers ID)
+                document.getElementById('totalUsers').textContent = data.total_orders;
+
+                // Pending Orders (gamit ang adminCount ID)
+                document.getElementById('adminCount').textContent = data.pending_orders;
+
+                // Shipped Orders (gamit ang staffCount ID)
+                document.getElementById('staffCount').textContent = data.shipped_orders;
+
+                // Total Sales (gamit ang activeCount ID)
+                document.getElementById('activeCount').textContent = '₱' + parseFloat(data.total_sales).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            } else {
+                console.error('Failed to load order stats');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading order stats:', error);
+        });
+}
+</script>
 </body>
 </html>
