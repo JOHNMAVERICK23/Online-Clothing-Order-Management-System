@@ -1,0 +1,226 @@
+<!-- Add this to your Admin/orders.php or wherever you manage orders -->
+
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-credit-card"></i> Process Payment
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            
+            <form id="paymentForm">
+                <div class="modal-body">
+                    <input type="hidden" id="paymentOrderId" value="">
+                    
+                    <!-- Order Summary -->
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6 class="card-title mb-2">Order Details</h6>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span>Order #:</span>
+                                <strong id="paymentOrderNo"></strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span>Customer:</span>
+                                <strong id="paymentCustomer"></strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; border-top: 1px solid #ddd; padding-top: 8px;">
+                                <span style="font-weight: 600;">Total Amount:</span>
+                                <strong id="paymentAmount" style="color: #27ae60; font-size: 1.1rem;"></strong>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Method Selection -->
+                    <div class="mb-3">
+                        <label class="form-label">Payment Method</label>
+                        <div class="payment-methods">
+                            <div class="form-check payment-option">
+                                <input class="form-check-input" type="radio" name="payment_method" 
+                                       id="method_credit_card" value="credit_card" checked>
+                                <label class="form-check-label" for="method_credit_card">
+                                    <i class="bi bi-credit-card"></i> Credit/Debit Card
+                                </label>
+                            </div>
+                            
+                            <div class="form-check payment-option">
+                                <input class="form-check-input" type="radio" name="payment_method" 
+                                       id="method_bank_transfer" value="bank_transfer">
+                                <label class="form-check-label" for="method_bank_transfer">
+                                    <i class="bi bi-bank"></i> Bank Transfer
+                                </label>
+                            </div>
+                            
+                            <div class="form-check payment-option">
+                                <input class="form-check-input" type="radio" name="payment_method" 
+                                       id="method_ewallet" value="ewallet">
+                                <label class="form-check-label" for="method_ewallet">
+                                    <i class="bi bi-wallet"></i> E-Wallet (GCash, PayMaya)
+                                </label>
+                            </div>
+                            
+                            <div class="form-check payment-option">
+                                <input class="form-check-input" type="radio" name="payment_method" 
+                                       id="method_retail" value="retail">
+                                <label class="form-check-label" for="method_retail">
+                                    <i class="bi bi-shop"></i> Over-the-Counter
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Processing Message -->
+                    <div id="paymentMessage" class="alert" style="display: none;"></div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btnProcessPayment">
+                        <i class="bi bi-lock"></i> Process Payment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- CSS for Payment Modal -->
+<style>
+.payment-methods {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+}
+
+.payment-option {
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin: 0;
+}
+
+.payment-option:hover {
+    border-color: #3498db;
+    background-color: #f8f9fa;
+}
+
+.payment-option input[type="radio"]:checked + label {
+    color: #3498db;
+    font-weight: 600;
+}
+
+.payment-option input[type="radio"]:checked {
+    border-color: #3498db;
+}
+
+.payment-option label {
+    cursor: pointer;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.payment-option i {
+    font-size: 1.2rem;
+}
+</style>
+
+<!-- JavaScript for Payment Processing -->
+<script>
+// Open payment modal
+function openPaymentModal(orderId) {
+    const order = allOrders.find(o => o.id == orderId);
+    
+    if (!order) {
+        alert('Order not found');
+        return;
+    }
+    
+    // Populate modal
+    document.getElementById('paymentOrderId').value = orderId;
+    document.getElementById('paymentOrderNo').textContent = order.order_number;
+    document.getElementById('paymentCustomer').textContent = order.customer_name;
+    document.getElementById('paymentAmount').textContent = '₱' + parseFloat(order.total_amount).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+    
+    // Reset form
+    document.getElementById('paymentForm').reset();
+    document.getElementById('paymentMessage').style.display = 'none';
+    document.getElementById('method_credit_card').checked = true;
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
+    modal.show();
+}
+
+// Handle payment form submission
+document.getElementById('paymentForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const orderId = document.getElementById('paymentOrderId').value;
+    const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
+    const btnSubmit = document.getElementById('btnProcessPayment');
+    
+    // Disable button
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
+    
+    const formData = new FormData();
+    formData.append('order_id', orderId);
+    formData.append('payment_method', paymentMethod);
+    
+    fetch('../PROCESS/processPayment.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            const msgDiv = document.getElementById('paymentMessage');
+            msgDiv.className = 'alert alert-success';
+            msgDiv.innerHTML = '<i class="bi bi-check-circle"></i> ' + data.message;
+            msgDiv.style.display = 'block';
+            
+            // Redirect to payment URL after 2 seconds
+            setTimeout(() => {
+                window.location.href = data.payment_url;
+            }, 2000);
+        } else {
+            // Show error message
+            const msgDiv = document.getElementById('paymentMessage');
+            msgDiv.className = 'alert alert-danger';
+            msgDiv.innerHTML = '<i class="bi bi-exclamation-circle"></i> ' + data.message;
+            msgDiv.style.display = 'block';
+            
+            // Re-enable button
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = '<i class="bi bi-lock"></i> Process Payment';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+        
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = '<i class="bi bi-lock"></i> Process Payment';
+    });
+});
+
+// Add button to orders.php to trigger payment modal
+function addPaymentButton(orderId) {
+    return `
+        <button class="btn btn-outline-success btn-sm" onclick="openPaymentModal(${orderId})">
+            <i class="bi bi-credit-card"></i> Process Payment
+        </button>
+    `;
+}
+</script>

@@ -54,6 +54,20 @@ if ($result->num_rows > 0) {
     }
 }
 
+// Calculate stats
+$stats = [
+    'total' => count($orders),
+    'pending' => 0,
+    'shipped' => 0,
+    'delivered' => 0
+];
+
+foreach ($orders as $order) {
+    if ($order['status'] === 'pending') $stats['pending']++;
+    if ($order['status'] === 'shipped') $stats['shipped']++;
+    if ($order['status'] === 'delivered') $stats['delivered']++;
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -129,28 +143,28 @@ if ($result->num_rows > 0) {
             <div class="col-md-3 mb-3">
                 <div class="stat-box primary">
                     <div class="stat-icon"><i class="bi bi-bag-check"></i></div>
-                    <div class="stat-number" id="totalOrders">0</div>
+                    <div class="stat-number"><?php echo $stats['total']; ?></div>
                     <div class="stat-label">Total Orders</div>
                 </div>
             </div>
             <div class="col-md-3 mb-3">
                 <div class="stat-box warning">
                     <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
-                    <div class="stat-number" id="pendingOrders">0</div>
+                    <div class="stat-number"><?php echo $stats['pending']; ?></div>
                     <div class="stat-label">Pending</div>
                 </div>
             </div>
             <div class="col-md-3 mb-3">
                 <div class="stat-box info">
                     <div class="stat-icon"><i class="bi bi-truck"></i></div>
-                    <div class="stat-number" id="shippedOrders">0</div>
+                    <div class="stat-number"><?php echo $stats['shipped']; ?></div>
                     <div class="stat-label">Shipped</div>
                 </div>
             </div>
             <div class="col-md-3 mb-3">
                 <div class="stat-box success">
                     <div class="stat-icon"><i class="bi bi-check-circle"></i></div>
-                    <div class="stat-number" id="deliveredOrders">0</div>
+                    <div class="stat-number"><?php echo $stats['delivered']; ?></div>
                     <div class="stat-label">Delivered</div>
                 </div>
             </div>
@@ -194,14 +208,65 @@ if ($result->num_rows > 0) {
                                 <div class="info-label">Total Amount</div>
                                 <div class="info-value">₱<?php echo number_format($order['total_amount'], 2); ?></div>
                             </div>
+                            
+                            <!-- PAYMENT STATUS - FIXED VERSION -->
                             <div class="info-item">
                                 <div class="info-label">Payment Status</div>
                                 <div class="info-value">
-                                    <span class="badge bg-<?php echo $order['payment_status'] === 'paid' ? 'success' : 'warning'; ?>">
-                                        <?php echo strtoupper($order['payment_status']); ?>
-                                    </span>
+                                    <?php
+                                    // Check if payment record exists
+                                    $paymentStmt = $conn->prepare("SELECT status, payment_method FROM payments WHERE order_id = ?");
+                                    $paymentStmt->bind_param("i", $order['id']);
+                                    $paymentStmt->execute();
+                                    $paymentResult = $paymentStmt->get_result();
+                                    
+                                    if ($paymentResult->num_rows > 0) {
+                                        $payment = $paymentResult->fetch_assoc();
+                                        $paymentStatus = $payment['status'];
+                                        
+                                        $badgeClass = match($paymentStatus) {
+                                            'paid' => 'bg-success',
+                                            'pending' => 'bg-warning text-dark',
+                                            'failed' => 'bg-danger',
+                                            'expired' => 'bg-secondary',
+                                            default => 'bg-info'
+                                        };
+                                        
+                                        echo '<span class="badge ' . $badgeClass . '">' . strtoupper($paymentStatus) . '</span>';
+                                    } else {
+                                        echo '<span class="badge bg-secondary">NOT INITIATED</span>';
+                                    }
+                                    ?>
                                 </div>
                             </div>
+
+                            <!-- PAYMENT METHOD -->
+                            <div class="info-item">
+                                <div class="info-label">Payment Method</div>
+                                <div class="info-value">
+                                    <?php
+                                    $paymentStmt = $conn->prepare("SELECT payment_method FROM payments WHERE order_id = ?");
+                                    $paymentStmt->bind_param("i", $order['id']);
+                                    $paymentStmt->execute();
+                                    $paymentResult = $paymentStmt->get_result();
+                                    
+                                    if ($paymentResult->num_rows > 0) {
+                                        $payment = $paymentResult->fetch_assoc();
+                                        $method = match($payment['payment_method']) {
+                                            'credit_card' => '💳 Credit/Debit Card',
+                                            'bank_transfer' => '🏦 Bank Transfer',
+                                            'ewallet' => '📱 E-Wallet',
+                                            'retail' => '🏪 Over-the-Counter',
+                                            default => $payment['payment_method']
+                                        };
+                                        echo '<span class="badge bg-info">' . $method . '</span>';
+                                    } else {
+                                        echo '<span class="text-muted">Not set</span>';
+                                    }
+                                    ?>
+                                </div>
+                            </div>
+
                             <div class="info-item">
                                 <div class="info-label">Shipping Address</div>
                                 <div class="info-value" style="font-size: 12px;"><?php echo htmlspecialchars($order['shipping_address']); ?></div>
@@ -229,13 +294,44 @@ if ($result->num_rows > 0) {
                         </div>
 
                         <!-- Action Buttons -->
-                        <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                            <?php
+                            // Check payment status
+                            $paymentStmt = $conn->prepare("SELECT status FROM payments WHERE order_id = ?");
+                            $paymentStmt->bind_param("i", $order['id']);
+                            $paymentStmt->execute();
+                            $paymentResult = $paymentStmt->get_result();
+                            
+                            $paymentStatus = null;
+                            if ($paymentResult->num_rows > 0) {
+                                $payment = $paymentResult->fetch_assoc();
+                                $paymentStatus = $payment['status'];
+                            }
+                            ?>
+                            
+                            <!-- Payment Button -->
+                            <?php if ($paymentStatus !== 'paid'): ?>
+                                <button class="btn btn-outline-success btn-sm" 
+                                        onclick="openPaymentModal(<?php echo $order['id']; ?>, '<?php echo addslashes($order['order_number']); ?>', '<?php echo addslashes($order['customer_name']); ?>', <?php echo $order['total_amount']; ?>)">
+                                    <i class="bi bi-credit-card"></i> Process Payment
+                                </button>
+                            <?php else: ?>
+                                <button class="btn btn-success btn-sm" disabled>
+                                    <i class="bi bi-check-circle"></i> Payment Received
+                                </button>
+                            <?php endif; ?>
+                            
+                            <!-- Update Status Button -->
                             <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#updateStatusModal<?php echo $order['id']; ?>">
                                 <i class="bi bi-pencil"></i> Update Status
                             </button>
+                            
+                            <!-- E-Receipt Button -->
                             <button class="btn btn-outline-success btn-sm" onclick="generateReceipt(<?php echo $order['id']; ?>)">
                                 <i class="bi bi-file-pdf"></i> E-Receipt
                             </button>
+                            
+                            <!-- Print Button -->
                             <button class="btn btn-outline-info btn-sm" onclick="printOrder(<?php echo $order['id']; ?>)">
                                 <i class="bi bi-printer"></i> Print
                             </button>
@@ -290,8 +386,95 @@ if ($result->num_rows > 0) {
         </div>
     </div>
 
+    <!-- Payment Modal -->
+    <div class="modal fade" id="paymentModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-credit-card"></i> Process Payment
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                
+                <form id="paymentForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="paymentOrderId" value="">
+                        
+                        <!-- Order Summary -->
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title mb-2">Order Details</h6>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                    <span>Order #:</span>
+                                    <strong id="paymentOrderNo"></strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                    <span>Customer:</span>
+                                    <strong id="paymentCustomer"></strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; border-top: 1px solid #ddd; padding-top: 8px;">
+                                    <span style="font-weight: 600;">Total Amount:</span>
+                                    <strong id="paymentAmount" style="color: #27ae60; font-size: 1.1rem;"></strong>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Payment Methods -->
+                        <div class="mb-3">
+                            <label class="form-label">Payment Method</label>
+                            <div style="display: grid; grid-template-columns: 1fr; gap: 12px;">
+                                <div class="form-check" style="padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 6px; cursor: pointer;">
+                                    <input class="form-check-input" type="radio" name="payment_method" 
+                                           id="method_credit_card" value="credit_card" checked>
+                                    <label class="form-check-label" for="method_credit_card">
+                                        <i class="bi bi-credit-card"></i> Credit/Debit Card
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check" style="padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 6px; cursor: pointer;">
+                                    <input class="form-check-input" type="radio" name="payment_method" 
+                                           id="method_bank_transfer" value="bank_transfer">
+                                    <label class="form-check-label" for="method_bank_transfer">
+                                        <i class="bi bi-bank"></i> Bank Transfer
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check" style="padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 6px; cursor: pointer;">
+                                    <input class="form-check-input" type="radio" name="payment_method" 
+                                           id="method_ewallet" value="ewallet">
+                                    <label class="form-check-label" for="method_ewallet">
+                                        <i class="bi bi-wallet"></i> E-Wallet
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check" style="padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 6px; cursor: pointer;">
+                                    <input class="form-check-input" type="radio" name="payment_method" 
+                                           id="method_retail" value="retail">
+                                    <label class="form-check-label" for="method_retail">
+                                        <i class="bi bi-shop"></i> Over-the-Counter
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="paymentMessage" class="alert" style="display: none;"></div>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="btnProcessPayment">
+                            <i class="bi bi-lock"></i> Process Payment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Filter functions
         function applyFilters() {
             const search = document.getElementById('searchInput').value;
             const status = document.getElementById('statusFilter').value;
@@ -311,6 +494,78 @@ if ($result->num_rows > 0) {
         function printOrder(orderId) {
             window.print();
         }
+
+        // Payment Modal Functions
+        function openPaymentModal(orderId, orderNumber, customerName, amount) {
+            document.getElementById('paymentOrderId').value = orderId;
+            document.getElementById('paymentOrderNo').textContent = orderNumber;
+            document.getElementById('paymentCustomer').textContent = customerName;
+            document.getElementById('paymentAmount').textContent = '₱' + parseFloat(amount).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+            
+            document.getElementById('paymentForm').reset();
+            document.getElementById('paymentMessage').style.display = 'none';
+            document.getElementById('method_credit_card').checked = true;
+            
+            const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
+            modal.show();
+        }
+
+        // Handle payment form submission
+        document.getElementById('paymentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const orderId = document.getElementById('paymentOrderId').value;
+            const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
+            const btnSubmit = document.getElementById('btnProcessPayment');
+            
+            // Disable button
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
+            
+            const formData = new FormData();
+            formData.append('order_id', orderId);
+            formData.append('payment_method', paymentMethod);
+            
+            fetch('../PROCESS/processPayment.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    const msgDiv = document.getElementById('paymentMessage');
+                    msgDiv.className = 'alert alert-success';
+                    msgDiv.innerHTML = '<i class="bi bi-check-circle"></i> ' + data.message;
+                    msgDiv.style.display = 'block';
+                    
+                    // Redirect to Xendit after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = data.payment_url;
+                    }, 2000);
+                } else {
+                    // Show error message
+                    const msgDiv = document.getElementById('paymentMessage');
+                    msgDiv.className = 'alert alert-danger';
+                    msgDiv.innerHTML = '<i class="bi bi-exclamation-circle"></i> ' + data.message;
+                    msgDiv.style.display = 'block';
+                    
+                    // Re-enable button
+                    btnSubmit.disabled = false;
+                    btnSubmit.innerHTML = '<i class="bi bi-lock"></i> Process Payment';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+                
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = '<i class="bi bi-lock"></i> Process Payment';
+            });
+        });
     </script>
 </body>
 </html>
