@@ -757,7 +757,7 @@ function loadCustomerWishlistFromDatabase($pdo, $customer_id) {
                 
                 <!-- Admin/Staff Login Link -->
                 <p style="margin-bottom: 1rem; font-size: 0.8rem;">
-                    <a href="../admin/admin_login.php" style="color: var(--gray);">
+                    <a href="/login.html" style="color: var(--gray);">
                         <i class="fas fa-lock"></i> Admin/Staff Login
                     </a>
                 </p>

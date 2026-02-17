@@ -753,7 +753,7 @@ if (isset($_GET['logout'])) {
         </button>
         
         <a href="shop.php" class="nav-logo">
-            <img src="../images/logo.jpg" alt="Alas Clothing Shop" class="logo-image">
+            <img src="images/logo.jpg" alt="Alas Clothing Shop" class="logo-image">
             <span class="brand-name">Alas Clothing Shop</span>
         </a>
         

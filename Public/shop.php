@@ -1352,7 +1352,7 @@ if ($is_ajax) {
         </button>
         
         <a href="../index.php" class="nav-logo">
-            <img src="../images/logo.jpg" class="logo-image">
+            <img src="images/logo.jpg" class="logo-image">
             <span class="brand-name">Alas Clothing Shop</span>
         </a>
         

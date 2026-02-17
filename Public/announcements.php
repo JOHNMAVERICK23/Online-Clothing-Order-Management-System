@@ -14,7 +14,7 @@ $user_name = $_SESSION['user_name'] ?? 'Guest';
 
 // Database connection
 $host = 'localhost';
-$dbname = 'clothing_management_system';
+$dbname = 'clothing_management_system'; // Changed from 'clothing_shop'
 $username = 'root';
 $password = '';
 

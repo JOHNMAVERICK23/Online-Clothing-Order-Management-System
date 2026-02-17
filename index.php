@@ -935,7 +935,7 @@ function getCmsContent($section, $field, $default = '') {
                     <i class="fas fa-shopping-bag"></i>
                     <?php echo getCmsContent('hero', 'button1_text'); ?>
                 </a>
-                <a href="<?php echo getCmsContent('hero', 'button2_link', '#new-arrivals'); ?>" class="btn-hero btn-hero-outline">
+                <a href="<?php echo getCmsContent('hero', 'button2_link', './Public/new_arrivals.php'); ?>" class="btn-hero btn-hero-outline">
                     <i class="fas fa-star"></i>
                     <?php echo getCmsContent('hero', 'button2_text'); ?>
                 </a>

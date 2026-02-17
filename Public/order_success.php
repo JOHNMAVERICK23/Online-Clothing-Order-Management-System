@@ -3,7 +3,7 @@ session_start();
 
 // Check if user is logged in
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true || $_SESSION['user_type'] !== 'customer') {
-    header('Location: ../LANDING PAGE/login_register.php');
+    header('Location: login_register.php');
     exit;
 }
 
