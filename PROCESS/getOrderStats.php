@@ -5,7 +5,7 @@ require_once 'db_config.php';
 header('Content-Type: application/json');
 
 // Check if user is logged in and is admin
-if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+if (!isset($_SESSION['user_id'])) {
     exit(json_encode([
         'success' => false,
         'message' => 'Unauthorized access'

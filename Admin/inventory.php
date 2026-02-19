@@ -148,7 +148,7 @@ while ($cat = $categoryResult->fetch_assoc()) {
     <div class="sidebar">
         <div class="sidebar-logo">Admin</div>
         <ul class="sidebar-menu sidebar-scroll">
-            <li><a href="dashboard.html"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+            <li><a href="dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
             <li><a href="accounts.html"><i class="bi bi-people"></i> Manage Accounts</a></li>
             <li><a href="activityLog.html"><i class="bi bi-clock-history"></i> Activity Log</a></li>
             <li><a href="products.html"><i class="bi bi-box-seam"></i> Products Management</a></li>

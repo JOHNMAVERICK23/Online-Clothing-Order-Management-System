@@ -1,3 +1,8 @@
+<?php
+require_once '../PROCESS/auth_check.php';
+requireAdmin();
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,7 +22,7 @@
             </div>
         </div>
         <ul class="sidebar-menu sidebar-scroll">
-            <li><a href="dashboard.html" class="active"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+            <li><a href="dashboard.php" class="active"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
             <li><a href="accounts.html"><i class="bi bi-people"></i> Manage Accounts</a></li>
             <li><a href="activityLog.html"><i class="bi bi-clock-history"></i> Activity Log</a></li>
             <li><a href="products.html"><i class="bi bi-box-seam"></i>Product Management</a></li>

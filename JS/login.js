@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (loginForm && submitBtn) {
         loginForm.addEventListener('submit', async function(e) {
             e.preventDefault();
-            
+
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
 
@@ -53,23 +53,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (data.success) {
                     Toast.success(data.message);
-                    
+
                     // Store user info in sessionStorage for dashboard
                     sessionStorage.setItem('user_name', email.split('@')[0]);
                     sessionStorage.setItem('user_email', email);
                     sessionStorage.setItem('last_login', new Date().toISOString());
-                    
+
                     // Show success message for 1.5 seconds before redirecting
                     setTimeout(() => {
                         window.location.href = data.redirect;
                     }, 1500);
+
                 } else {
                     Toast.error(data.message);
-                    resetLoginButton(submitBtn, originalText);
-                    
-                    // Shake animation for error
                     triggerShakeAnimation(loginForm);
+
+                    // Kung naka-lockout, i-disable ang button at mag-countdown
+                    if (data.locked && data.remaining > 0) {
+                        startLockoutCountdown(submitBtn, originalText, data.remaining);
+                    } else {
+                        // Hindi pa naka-lock, i-enable lang ulit ang button
+                        resetLoginButton(submitBtn, originalText);
+                    }
                 }
+
             } catch (error) {
                 Toast.error('Network error. Please try again.');
                 console.error('Login error:', error);
@@ -82,23 +89,53 @@ document.addEventListener('DOMContentLoaded', function() {
     addShakeAnimationStyle();
 });
 
+// =============================================
+// LOCKOUT COUNTDOWN
+// =============================================
+function startLockoutCountdown(button, originalText, seconds) {
+    if (!button) return;
+
+    button.disabled = true;
+    button.style.opacity = '0.6';
+    button.style.cursor = 'not-allowed';
+
+    // Ipakita agad ang unang countdown
+    button.textContent = `Wait ${seconds}s...`;
+
+    const countdown = setInterval(() => {
+        seconds--;
+
+        if (seconds <= 0) {
+            clearInterval(countdown);
+            button.disabled = false;
+            button.style.opacity = '1';
+            button.style.cursor = 'pointer';
+            button.textContent = originalText;
+            Toast.info('You can try logging in again.');
+        } else {
+            button.textContent = `Wait ${seconds}s...`;
+        }
+    }, 1000);
+}
+
+// =============================================
+// HELPER FUNCTIONS
+// =============================================
 function checkLogoutMessage() {
-    // Check if there's a logout message (we'll use localStorage for this)
     const logoutMessage = localStorage.getItem('logout_message');
     if (logoutMessage) {
         Toast.success(logoutMessage);
-        localStorage.removeItem('logout_message'); // Clear after showing
+        localStorage.removeItem('logout_message');
     }
 }
 
 function loadToastJS() {
-    // Try to load toast.js from different paths
     const paths = [
         'JS/toast.js',
         '../JS/toast.js',
         '/JS/toast.js'
     ];
-    
+
     let loaded = false;
     paths.forEach(path => {
         if (!loaded) {
@@ -121,6 +158,7 @@ function resetLoginButton(button, originalText) {
         button.disabled = false;
         button.textContent = originalText;
         button.style.opacity = '1';
+        button.style.cursor = 'pointer';
     }
 }
 
@@ -151,17 +189,9 @@ function addShakeAnimationStyle() {
 // Simple Toast fallback if toast.js fails to load
 if (typeof Toast === 'undefined') {
     window.Toast = {
-        success: function(msg) {
-            alert('Success: ' + msg);
-        },
-        error: function(msg) {
-            alert('Error: ' + msg);
-        },
-        info: function(msg) {
-            alert('Info: ' + msg);
-        },
-        warning: function(msg) {
-            alert('Warning: ' + msg);
-        }
+        success: function(msg) { alert('Success: ' + msg); },
+        error: function(msg) { alert('Error: ' + msg); },
+        info: function(msg) { alert('Info: ' + msg); },
+        warning: function(msg) { alert('Warning: ' + msg); }
     };
 }
