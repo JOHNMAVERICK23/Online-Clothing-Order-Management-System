@@ -108,7 +108,7 @@ $stats = $statsStmt->get_result()->fetch_assoc();
             <li><a href="orders.php"><i class="bi bi-receipt"></i> Order Management</a></li>
             <li><a href="products.html"><i class="bi bi-box-seam"></i> Product Management</a></li>
             <li><a href="staff_report.php" class="active"><i class="bi bi-file-earmark-bar-graph"></i> Sales Report</a></li>
-            <li><a href="../PROCESS/logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+            <li><a href="../PROCESS/logout.php" style="background-color: red;"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
         </ul>
     </div>
 

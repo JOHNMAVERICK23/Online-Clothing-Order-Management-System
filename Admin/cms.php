@@ -408,7 +408,7 @@ $homepageSections = ['hero', 'features', 'categories', 'featured', 'new_arrivals
             <li><a href="orders.php"><i class="bi bi-receipt"></i> Order Management</a></li>
             <li><a href="inventory.php"><i class="bi bi-boxes"></i> Inventory</a></li>
             <li><a href="cms.php" class="active"><i class="bi bi-file-earmark-text"></i> Content Management</a></li>
-            <li><a href="../PROCESS/logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+            <li><a href="../PROCESS/logout.php" style="background-color: red;"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
         </ul>
     </div>
 

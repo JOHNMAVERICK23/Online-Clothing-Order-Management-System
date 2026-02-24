@@ -64,84 +64,18 @@ if ($result->num_rows > 0) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="../CSS/style.css">
-    <style>
-        :root {
-    --primary: #1a1a1a;
-    --secondary: #3498db;
-    --success: #2ecc71;
-    --danger: #e74c3c;
-    --warning: #f39c12;
-    --info: #3498db;
-    }
-        .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-        .status-pending { background-color: #fff3cd; color: #856404; }
-        .status-processing { background-color: #cfe2ff; color: #084298; }
-        .status-shipped { background-color: #cff4fc; color: #055160; }
-        .status-delivered { background-color: #d1e7dd; color: #0f5132; }
-        .status-cancelled { background-color: #f8d7da; color: #721c24; }
-        .order-card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
-        .order-number { font-size: 18px; font-weight: 700; color: #1a1a1a; }
-        .order-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
-        .info-item { padding: 10px; background: #f9f9f9; border-radius: 4px; }
-        .info-label { font-size: 12px; color: #666; text-transform: uppercase; }
-        .info-value { font-size: 14px; font-weight: 600; color: #1a1a1a; margin-top: 5px; }
-        .order-items { margin: 15px 0; padding: 15px; background: #f9f9f9; border-radius: 4px; }
-        .item-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e0e0e0; }
-        .item-row:last-child { border-bottom: none; }
-        .stat-box {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    text-align: center;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s, box-shadow 0.3s;
-    border-left: 5px solid var(--secondary);
-    height: 100%;
-    }
-    
-    .stat-box:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
-    }
-    .stat-box.primary { border-left-color: var(--primary); }
-    .stat-box.success { border-left-color: var(--primary); }
-    .stat-box.warning { border-left-color: var(--primary); }
-    .stat-box.info { border-left-color: var(--primary); }
-    .stat-box.danger { border-left-color: var(--primary); }
-    
-    .stat-number {
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--primary);
-    margin-bottom: 5px;
-    }
-    
-    .stat-label {
-    font-size: 14px;
-    color: #666;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    }
-    
-    .stat-icon {
-    font-size: 32px;
-    color: var(--secondary);
-    margin-bottom: 10px;
-    }
-    </style>
+    <link rel="stylesheet" href="../CSS/orders.css">
 </head>
 <body>
     <div class="sidebar">
-        <div class="sidebar-logo">Admin</div>
+        <div class="sidebar-logo">Staff</div>
         <ul class="sidebar-menu">
-            <li><a href="orders.php" class="active"><i class="bi bi-receipt"></i> Orders Management</a></li>
-            <li><a href="products.html"><i class="bi bi-box-seam"></i> Products Management</a></li>
+           <li><a href="orders.php" class="active"><i class="bi bi-receipt"></i> Order Management</a></li>
+            <li><a href="products.html"><i class="bi bi-box-seam"></i> Product Management</a></li>
             <li><a href="staff_report.php"><i class="bi bi-file-earmark-bar-graph"></i> Sales Report</a></li>
-            <li><a href="../PROCESS/logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+            <li><a href="../PROCESS/logout.php" style="background-color: red;"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
         </ul>
     </div>
-    
 
     <div class="main-content">
         <div class="topbar">
@@ -312,34 +246,37 @@ if ($result->num_rows > 0) {
                                     <h5 class="modal-title">Update Order Status</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
-                                <form >
-                                    <!-- Sa loob ng modal, palitan ang <form> -->
-<div class="modal-body">
-    <input type="hidden" id="order_id_<?= $order['id'] ?>" value="<?= $order['id'] ?>">
-    <div class="mb-3">
-        <label class="form-label">New Status</label>
-        <select class="form-select status-select" id="status_<?= $order['id'] ?>">
-            <option value="">Select Status</option>
-            <option value="pending">Pending</option>
-            <option value="processing">Processing</option>
-            <option value="shipped">Shipped</option>
-            <option value="delivered">Delivered</option>
-            <option value="cancelled">Cancelled</option>
-        </select>
-    </div>
-    <div class="mb-3">
-        <label class="form-label">Courier Choice</label>
-        <input type="text" class="form-control courier-input" id="courier_<?= $order['id'] ?>" placeholder="e.g., JNT, LBC, Grab">
-    </div>
-    <div class="mb-3">
-        <label class="form-label">Waybill Number</label>
-        <input type="text" class="form-control waybill-input" id="waybill_<?= $order['id'] ?>" placeholder="Tracking number">
-    </div>
-</div>
-<div class="modal-footer">
-    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-    <button type="button" class="btn btn-primary update-status-btn" data-order-id="<?= $order['id'] ?>">Update Status</button>
-</div>
+                                <form method="POST">
+                                    <div class="modal-body">
+                                        <input type="hidden" name="action" value="update_status">
+                                        <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">New Status</label>
+                                            <select class="form-select" name="new_status" required>
+                                                <option value="">Select Status</option>
+                                                <option value="pending" <?php echo $order['status'] === 'pending' ? 'selected' : ''; ?>>Pending</option>
+                                                <option value="processing" <?php echo $order['status'] === 'processing' ? 'selected' : ''; ?>>Processing</option>
+                                                <option value="shipped" <?php echo $order['status'] === 'shipped' ? 'selected' : ''; ?>>Shipped</option>
+                                                <option value="delivered" <?php echo $order['status'] === 'delivered' ? 'selected' : ''; ?>>Delivered</option>
+                                                <option value="cancelled" <?php echo $order['status'] === 'cancelled' ? 'selected' : ''; ?>>Cancelled</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Courier Choice</label>
+                                            <input type="text" class="form-control" name="courier_choice" placeholder="e.g., JNT, LBC, Grab">
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Waybill Number</label>
+                                            <input type="text" class="form-control" name="waybill" placeholder="Tracking number">
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-primary">Update Status</button>
+                                    </div>
                                 </form>
                             </div>
                         </div>
@@ -391,58 +328,6 @@ function loadOrderStats() {
         })
         .catch(error => {
             console.error('Error loading order stats:', error);
-        });
-}
-
-document.querySelectorAll('.update-status-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const orderId = this.dataset.orderId;
-        const newStatus = document.getElementById(`status_${orderId}`).value;
-        const courier = document.getElementById(`courier_${orderId}`).value;
-        const waybill = document.getElementById(`waybill_${orderId}`).value;
-
-        if (!newStatus) {
-            alert('Please select a status');
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('action', 'update_status');
-        formData.append('order_id', orderId);
-        formData.append('new_status', newStatus);
-        formData.append('courier_choice', courier);
-        formData.append('waybill', waybill);
-
-        fetch('../PROCESS/updateOrderStatus.php', {
-            method: 'POST',
-            body: formData
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                Toast.success('Order status updated');
-                // I-reload ang listahan ng orders (o i-update ang status badge sa UI)
-                loadOrders(); // function na mag-fetch ng orders via AJAX
-                bootstrap.Modal.getInstance(document.getElementById(`updateStatusModal${orderId}`)).hide();
-            } else {
-                Toast.error(data.message);
-            }
-        })
-        .catch(err => Toast.error('Network error'));
-    });
-});
-
-function loadOrders() {
-    const search = document.getElementById('searchInput').value;
-    const status = document.getElementById('statusFilter').value;
-    const params = new URLSearchParams({ search, status });
-
-    fetch(`../PROCESS/getFilteredOrders.php?${params}`)
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                displayOrders(data.orders);
-            }
         });
 }
 </script>
