@@ -250,37 +250,34 @@ if ($result->num_rows > 0) {
                                     <h5 class="modal-title">Update Order Status</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
-                                <form method="POST">
-                                    <div class="modal-body">
-                                        <input type="hidden" name="action" value="update_status">
-                                        <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
-                                        
-                                        <div class="mb-3">
-                                            <label class="form-label">New Status</label>
-                                            <select class="form-select" name="new_status" required>
-                                                <option value="">Select Status</option>
-                                                <option value="pending" <?php echo $order['status'] === 'pending' ? 'selected' : ''; ?>>Pending</option>
-                                                <option value="processing" <?php echo $order['status'] === 'processing' ? 'selected' : ''; ?>>Processing</option>
-                                                <option value="shipped" <?php echo $order['status'] === 'shipped' ? 'selected' : ''; ?>>Shipped</option>
-                                                <option value="delivered" <?php echo $order['status'] === 'delivered' ? 'selected' : ''; ?>>Delivered</option>
-                                                <option value="cancelled" <?php echo $order['status'] === 'cancelled' ? 'selected' : ''; ?>>Cancelled</option>
-                                            </select>
-                                        </div>
-                                        
-                                        <div class="mb-3">
-                                            <label class="form-label">Courier Choice</label>
-                                            <input type="text" class="form-control" name="courier_choice" placeholder="e.g., JNT, LBC, Grab">
-                                        </div>
-                                        
-                                        <div class="mb-3">
-                                            <label class="form-label">Waybill Number</label>
-                                            <input type="text" class="form-control" name="waybill" placeholder="Tracking number">
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                        <button type="submit" class="btn btn-primary">Update Status</button>
-                                    </div>
+                                <form>
+                                    <!-- Sa loob ng modal, palitan ang <form> -->
+<div class="modal-body">
+    <input type="hidden" id="order_id_<?= $order['id'] ?>" value="<?= $order['id'] ?>">
+    <div class="mb-3">
+        <label class="form-label">New Status</label>
+        <select class="form-select status-select" id="status_<?= $order['id'] ?>">
+            <option value="">Select Status</option>
+            <option value="pending">Pending</option>
+            <option value="processing">Processing</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
+            <option value="cancelled">Cancelled</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Courier Choice</label>
+        <input type="text" class="form-control courier-input" id="courier_<?= $order['id'] ?>" placeholder="e.g., JNT, LBC, Grab">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Waybill Number</label>
+        <input type="text" class="form-control waybill-input" id="waybill_<?= $order['id'] ?>" placeholder="Tracking number">
+    </div>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+    <button type="button" class="btn btn-primary update-status-btn" data-order-id="<?= $order['id'] ?>">Update Status</button>
+</div>
                                 </form>
                             </div>
                         </div>
@@ -332,6 +329,58 @@ function loadOrderStats() {
         })
         .catch(error => {
             console.error('Error loading order stats:', error);
+        });
+}
+
+document.querySelectorAll('.update-status-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const orderId = this.dataset.orderId;
+        const newStatus = document.getElementById(`status_${orderId}`).value;
+        const courier = document.getElementById(`courier_${orderId}`).value;
+        const waybill = document.getElementById(`waybill_${orderId}`).value;
+
+        if (!newStatus) {
+            alert('Please select a status');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('action', 'update_status');
+        formData.append('order_id', orderId);
+        formData.append('new_status', newStatus);
+        formData.append('courier_choice', courier);
+        formData.append('waybill', waybill);
+
+        fetch('../PROCESS/updateOrderStatus.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                Toast.success('Order status updated');
+                // I-reload ang listahan ng orders (o i-update ang status badge sa UI)
+                loadOrders(); // function na mag-fetch ng orders via AJAX
+                bootstrap.Modal.getInstance(document.getElementById(`updateStatusModal${orderId}`)).hide();
+            } else {
+                Toast.error(data.message);
+            }
+        })
+        .catch(err => Toast.error('Network error'));
+    });
+});
+
+function loadOrders() {
+    const search = document.getElementById('searchInput').value;
+    const status = document.getElementById('statusFilter').value;
+    const params = new URLSearchParams({ search, status });
+
+    fetch(`../PROCESS/getFilteredOrders.php?${params}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                displayOrders(data.orders);
+            }
         });
 }
 </script>

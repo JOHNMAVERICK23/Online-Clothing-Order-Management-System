@@ -411,6 +411,37 @@ while ($cat = $categoryResult->fetch_assoc()) {
         function viewHistory(productId) {
             window.location.href = 'stock_history.php?product_id=' + productId;
         }
+
+        document.querySelectorAll('.stock-in-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const productId = this.dataset.productId;
+        const quantity = document.getElementById(`qty_in_${productId}`).value;
+        const supplier = document.getElementById(`supplier_${productId}`).value;
+        const notes = document.getElementById(`notes_in_${productId}`).value;
+
+        const formData = new FormData();
+        formData.append('action', 'stock_in');
+        formData.append('product_id', productId);
+        formData.append('quantity', quantity);
+        formData.append('supplier_info', supplier);
+        formData.append('notes', notes);
+
+        fetch('../PROCESS/updateStock.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                Toast.success(data.message);
+                loadInventory(); // i-refresh ang listahan
+                bootstrap.Modal.getInstance(document.getElementById(`stockInModal${productId}`)).hide();
+            } else {
+                Toast.error(data.message);
+            }
+        });
+    });
+});
     </script>
 </body>
 </html>
