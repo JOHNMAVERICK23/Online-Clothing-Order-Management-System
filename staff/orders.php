@@ -288,25 +288,29 @@ if ($result->num_rows > 0) {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        function applyFilters() {
-            const search = document.getElementById('searchInput').value;
-            const status = document.getElementById('statusFilter').value;
-            window.location.href = `orders.php?search=${search}&status=${status}`;
-        }
+     function applyFilters() {
+        const search = document.getElementById('searchInput').value;
+        const status = document.getElementById('statusFilter').value;
+        window.location.href = `orders.php?search=${search}&status=${status}`;
+    }
 
-        function resetFilters() {
-            document.getElementById('searchInput').value = '';
-            document.getElementById('statusFilter').value = '';
-            window.location.href = 'orders.php';
-        }
+    function resetFilters() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('statusFilter').value = '';
+        window.location.href = 'orders.php';
+    }
 
-        function generateReceipt(orderId) {
-            window.open(`receipt.php?order_id=${orderId}`, '_blank');
-        }
+    function generateReceipt(orderId) {
+        window.open(`receipt.php?order_id=${orderId}`, '_blank');
+    }
 
-        function printOrder(orderId) {
-            window.print();
-        }
+    function printOrder(orderId) {
+        // Buksan ang receipt page sa bagong window tapos i-print agad
+        const printWin = window.open(`receipt.php?order_id=${orderId}`, '_blank');
+        printWin.addEventListener('load', function () {
+            printWin.print();
+        });
+    }
     </script>
     <script>
 document.addEventListener('DOMContentLoaded', function() {
