@@ -195,3 +195,103 @@ if (typeof Toast === 'undefined') {
         warning: function(msg) { alert('Warning: ' + msg); }
     };
 }
+
+// =============================================
+// FORGOT PASSWORD
+// =============================================
+const forgotModal = document.getElementById('forgotModal');
+const forgotLink = document.getElementById('forgotPasswordLink');
+const cancelForgotBtn = document.getElementById('cancelForgotBtn');
+const submitForgotBtn = document.getElementById('submitForgotBtn');
+
+if (forgotLink) {
+    forgotLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        forgotModal.style.display = 'flex';
+    });
+}
+
+if (cancelForgotBtn) {
+    cancelForgotBtn.addEventListener('click', function() {
+        forgotModal.style.display = 'none';
+        clearForgotForm();
+    });
+}
+
+// Close pag nag-click sa labas ng modal
+if (forgotModal) {
+    forgotModal.addEventListener('click', function(e) {
+        if (e.target === forgotModal) {
+            forgotModal.style.display = 'none';
+            clearForgotForm();
+        }
+    });
+}
+
+if (submitForgotBtn) {
+    submitForgotBtn.addEventListener('click', async function() {
+        const email = document.getElementById('resetEmail').value.trim();
+        const newPassword = document.getElementById('resetNewPassword').value;
+        const confirmPassword = document.getElementById('resetConfirmPassword').value;
+
+        // Validation
+        if (!email || !newPassword || !confirmPassword) {
+            Toast.error('Please fill in all fields');
+            return;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            Toast.error('Please enter a valid email address');
+            return;
+        }
+
+        if (newPassword.length < 6) {
+            Toast.error('Password must be at least 6 characters');
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            Toast.error('Passwords do not match');
+            return;
+        }
+
+        // Disable button
+        submitForgotBtn.disabled = true;
+        submitForgotBtn.textContent = 'Submitting...';
+
+        try {
+            const formData = new FormData();
+            formData.append('email', email);
+            formData.append('new_password', newPassword);
+
+            const response = await fetch('PROCESS/forgotPassword.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                Toast.success(data.message);
+                forgotModal.style.display = 'none';
+                clearForgotForm();
+            } else {
+                Toast.error(data.message);
+            }
+
+        } catch (error) {
+            Toast.error('Network error. Please try again.');
+            console.error('Forgot password error:', error);
+        } finally {
+            submitForgotBtn.disabled = false;
+            submitForgotBtn.textContent = 'Submit Request';
+        }
+    });
+}
+
+function clearForgotForm() {
+    document.getElementById('resetEmail').value = '';
+    document.getElementById('resetNewPassword').value = '';
+    document.getElementById('resetConfirmPassword').value = '';
+}

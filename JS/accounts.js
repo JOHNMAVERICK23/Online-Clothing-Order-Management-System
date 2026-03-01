@@ -87,8 +87,11 @@ function openAddModal() {
 }
 
 function openEditModal(id) {
-    const account = allAccounts.find(a => a.id === id);
-    if (!account) return;
+    const account = allAccounts.find(a => a.id == id); // == instead of ===
+    if (!account) {
+        console.warn('Account not found for id:', id);
+        return;
+    }
 
     document.getElementById('modalTitle').textContent = 'Edit Account';
     document.getElementById('accountId').value = account.id;
@@ -200,3 +203,103 @@ function showAlert(message, type) {
         alertDiv.remove();
     }, 5000);
 }
+
+
+// =============================================
+// PASSWORD RESET REQUESTS
+// =============================================
+function loadResetRequests() {
+    fetch('../PROCESS/getResetRequests.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayResetRequests(data.requests);
+                updatePendingBadge(data.requests);
+            }
+        })
+        .catch(error => console.error('Error loading reset requests:', error));
+}
+
+function updatePendingBadge(requests) {
+    const pending = requests.filter(r => r.status === 'pending').length;
+    const badge = document.getElementById('pendingBadge');
+    if (pending > 0) {
+        badge.textContent = pending;
+        badge.style.display = 'inline';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+function displayResetRequests(requests) {
+    const tbody = document.getElementById('resetRequestsTable');
+    tbody.innerHTML = '';
+
+    if (requests.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">No password reset requests</td></tr>';
+        return;
+    }
+
+    requests.forEach(req => {
+        const isPending = req.status === 'pending';
+        const statusBadge = `<span class="badge ${
+            req.status === 'pending' ? 'badge-warning' :
+            req.status === 'approved' ? 'badge-active' : 'badge-inactive'
+        }">${req.status.toUpperCase()}</span>`;
+
+        const actions = isPending ? `
+            <div class="table-actions">
+                <button class="btn-primary" onclick="handleResetRequest(${req.id}, 'approve')">Approve</button>
+                <button class="btn-danger" onclick="handleResetRequest(${req.id}, 'reject')">Reject</button>
+            </div>
+        ` : '—';
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${req.first_name} ${req.last_name}</td>
+            <td>${req.email}</td>
+            <td>${new Date(req.requested_at).toLocaleString()}</td>
+            <td>${statusBadge}</td>
+            <td>${actions}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function handleResetRequest(requestId, action) {
+    const confirmMsg = action === 'approve' 
+        ? 'Approve this password reset request?' 
+        : 'Reject this password reset request?';
+    
+    if (!confirm(confirmMsg)) return;
+
+    const formData = new FormData();
+    formData.append('request_id', requestId);
+    formData.append('action', action);
+
+    fetch('../PROCESS/approvePasswordReset.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(data.message, 'success');
+            loadResetRequests();
+        } else {
+            showAlert(data.message, 'danger');
+        }
+    })
+    .catch(error => {
+        showAlert('Error processing request', 'danger');
+        console.error('Error:', error);
+    });
+}
+
+window.handleResetRequest = handleResetRequest;
+
+// I-load kapag nag-load na ang page
+loadResetRequests();
+
+window.openEditModal = openEditModal;
+window.deleteAccount = deleteAccount;
